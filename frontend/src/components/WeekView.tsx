@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
 import { startOfWeek, addDays, format, isSameDay, isToday } from 'date-fns';
 import { Event } from '../types/Event';
-import { processOverlappingEvents } from '../utils/eventUtils';
+import { processOverlappingEvents, getTimezoneOffsetString } from '../utils/eventUtils';
 import { motion } from 'framer-motion';
 
 interface WeekViewProps {
@@ -13,7 +13,7 @@ interface WeekViewProps {
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
-const HOUR_HEIGHT = 64;
+const HOUR_HEIGHT = 40;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 const WeekView: React.FC<WeekViewProps> = ({
@@ -67,28 +67,33 @@ const WeekView: React.FC<WeekViewProps> = ({
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Column headers */}
-      <Box sx={{ display: 'flex', flexShrink: 0, borderBottom: '1px solid #e0e0e0' }}>
-        <Box sx={{ width: 60, flexShrink: 0 }} />
+      <Box sx={{ display: 'flex', flexShrink: 0 }}>
+        <Box sx={{ width: 60, flexShrink: 0, position: 'relative' }}>
+          <Typography variant="caption" sx={{ position: 'absolute', bottom: 8, right: 8, color: '#70757a', fontSize: '0.6rem', lineHeight: 1, whiteSpace: 'nowrap' }}>
+            {getTimezoneOffsetString()}
+          </Typography>
+        </Box>
         {days.map((day, i) => {
           const today = isToday(day);
           return (
-            <Box key={i} sx={{ flex: 1, textAlign: 'center', py: 1, borderLeft: '1px solid #e0e0e0' }}>
+            <Box key={i} sx={{ flex: 1, textAlign: 'center', py: 1, position: 'relative', borderBottom: '1px solid #e0e0e0' }}>
+              <Box sx={{ position: 'absolute', left: 0, bottom: 0, width: '1px', height: 8, backgroundColor: '#e0e0e0' }} />
               <Typography variant="caption" sx={{ color: today ? '#1a73e8' : '#70757a', fontSize: '0.7rem', letterSpacing: '0.05em', fontWeight: 600 }}>
                 {format(day, 'EEE').toUpperCase()}
               </Typography>
               <Box
                 sx={{
-                  width: 32,
-                  height: 32,
-                  margin: '2px auto 0',
+                  width: 46,
+                  height: 46,
+                  margin: '4px auto 0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '50%',
                   backgroundColor: today ? '#1a73e8' : 'transparent',
                   color: today ? 'white' : '#202124',
-                  fontSize: '1rem',
-                  fontWeight: today ? 700 : 400,
+                  fontSize: '1.625rem',
+                  fontWeight: today ? 500 : 400,
                 }}
               >
                 {format(day, 'd')}
@@ -96,54 +101,79 @@ const WeekView: React.FC<WeekViewProps> = ({
             </Box>
           );
         })}
+        <Box sx={{ width: 8, flexShrink: 0 }} />
       </Box>
 
-      {/* All-day row */}
-      <Box sx={{ display: 'flex', flexShrink: 0, borderBottom: '1px solid #e0e0e0', minHeight: 24 }}>
-        <Box sx={{ width: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', pr: 1 }}>
-          <Typography variant="caption" sx={{ color: '#70757a', fontSize: '0.65rem' }}>ALL DAY</Typography>
+      {/* All-day row - Only show if there are all-day events in the week */}
+      {days.some(day => getAllDayEventsForDay(day).length > 0) && (
+        <Box sx={{ display: 'flex', flexShrink: 0, minHeight: 24 }}>
+          <Box sx={{ width: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', pr: 1 }}>
+            
+          </Box>
+          {days.map((day, i) => {
+            const allDayEvents = getAllDayEventsForDay(day);
+            return (
+              <Box key={i} sx={{ flex: 1, minWidth: 0, borderLeft: '1px solid #e0e0e0', borderBottom: '1px solid #e0e0e0', p: 0.25 }}>
+                {allDayEvents.map((event) => (
+                  <Box
+                    key={event.id}
+                    onClick={(e) => { e.stopPropagation(); onEventClick(event, e.currentTarget); }}
+                    sx={{
+                      backgroundColor: event.color || '#1a73e8',
+                      color: 'white',
+                      borderRadius: '4px',
+                      px: 0.5,
+                      fontSize: '0.7rem',
+                      fontWeight: 500,
+                      mb: 0.25,
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      '&:hover': { filter: 'brightness(0.9)' },
+                    }}
+                  >
+                    {event.title}
+                  </Box>
+                ))}
+              </Box>
+            );
+          })}
+          <Box sx={{ width: 8, flexShrink: 0, borderBottom: '1px solid #e0e0e0' }} />
         </Box>
-        {days.map((day, i) => {
-          const allDayEvents = getAllDayEventsForDay(day);
-          return (
-            <Box key={i} sx={{ flex: 1, minWidth: 0, borderLeft: '1px solid #e0e0e0', p: 0.25 }}>
-              {allDayEvents.map((event) => (
-                <Box
-                  key={event.id}
-                  onClick={(e) => { e.stopPropagation(); onEventClick(event, e.currentTarget); }}
-                  sx={{
-                    backgroundColor: event.color || '#1a73e8',
-                    color: 'white',
-                    borderRadius: '4px',
-                    px: 0.5,
-                    fontSize: '0.7rem',
-                    fontWeight: 500,
-                    mb: 0.25,
-                    cursor: 'pointer',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    '&:hover': { filter: 'brightness(0.9)' },
-                  }}
-                >
-                  {event.title}
-                </Box>
-              ))}
-            </Box>
-          );
-        })}
-      </Box>
+      )}
 
       {/* Scrollable time grid */}
-      <Box ref={scrollRef} sx={{ flexGrow: 1, overflowY: 'auto', display: 'flex' }}>
+      <Box ref={scrollRef} sx={{ 
+        flexGrow: 1, 
+        overflowY: 'auto', 
+        display: 'flex',
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent',
+          borderLeft: '1px solid #e0e0e0',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#dadce0',
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: '#bdc1c6',
+        }
+      }}>
         {/* Time gutter */}
         <Box sx={{ width: 60, flexShrink: 0 }}>
           {HOURS.map((hour) => (
-            <Box key={hour} sx={{ height: HOUR_HEIGHT, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', pr: 1, pt: 0.5 }}>
+            <Box key={hour} sx={{ height: HOUR_HEIGHT, position: 'relative' }}>
               {hour > 0 && (
-                <Typography variant="caption" sx={{ color: '#70757a', fontSize: '0.65rem', lineHeight: 1, mt: '-0.4em' }}>
-                  {format(new Date().setHours(hour, 0, 0, 0), 'h a')}
-                </Typography>
+                <>
+                  <Typography variant="caption" sx={{ position: 'absolute', right: 12, top: '-0.6em', color: '#70757a', fontSize: '0.65rem', lineHeight: 1 }}>
+                    {format(new Date().setHours(hour, 0, 0, 0), 'h a')}
+                  </Typography>
+                  <Box sx={{ position: 'absolute', right: 0, top: 0, width: 8, height: '1px', backgroundColor: '#e0e0e0' }} />
+                </>
               )}
             </Box>
           ))}

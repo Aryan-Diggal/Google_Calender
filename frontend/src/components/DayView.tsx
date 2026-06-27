@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
 import { format, isToday } from 'date-fns';
 import { Event } from '../types/Event';
-import { processOverlappingEvents } from '../utils/eventUtils';
+import { processOverlappingEvents, getTimezoneOffsetString } from '../utils/eventUtils';
 import { motion } from 'framer-motion';
 
 interface DayViewProps {
@@ -13,7 +13,7 @@ interface DayViewProps {
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
-const HOUR_HEIGHT = 64;
+const HOUR_HEIGHT = 40;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 const DayView: React.FC<DayViewProps> = ({
@@ -44,9 +44,14 @@ const DayView: React.FC<DayViewProps> = ({
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Day header */}
-      <Box sx={{ flexShrink: 0, borderBottom: '1px solid #e0e0e0', display: 'flex' }}>
-        <Box sx={{ width: 60 }} />
-        <Box sx={{ flex: 1, py: 1.5, px: 2, borderLeft: '1px solid #e0e0e0' }}>
+      <Box sx={{ flexShrink: 0, display: 'flex' }}>
+        <Box sx={{ width: 60, flexShrink: 0, position: 'relative' }}>
+          <Typography variant="caption" sx={{ position: 'absolute', bottom: 8, right: 8, color: '#70757a', fontSize: '0.6rem', lineHeight: 1, whiteSpace: 'nowrap' }}>
+            {getTimezoneOffsetString()}
+          </Typography>
+        </Box>
+        <Box sx={{ flex: 1, py: 1.5, px: 2, position: 'relative', borderBottom: '1px solid #e0e0e0' }}>
+          <Box sx={{ position: 'absolute', left: 0, bottom: 0, width: '1px', height: 8, backgroundColor: '#e0e0e0' }} />
           <Typography variant="caption" sx={{ color: today ? '#1a73e8' : '#70757a', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.05em' }}>
             {format(currentDate, 'EEEE').toUpperCase()}
           </Typography>
@@ -60,23 +65,24 @@ const DayView: React.FC<DayViewProps> = ({
               borderRadius: '50%',
               backgroundColor: today ? '#1a73e8' : 'transparent',
               color: today ? 'white' : '#202124',
-              fontSize: '2rem',
-              fontWeight: today ? 700 : 300,
+              fontSize: '1.625rem',
+              fontWeight: today ? 500 : 400,
               ml: 1,
             }}
           >
             {format(currentDate, 'd')}
           </Box>
         </Box>
+        <Box sx={{ width: 8, flexShrink: 0, borderBottom: '1px solid #e0e0e0' }} />
       </Box>
 
       {/* All-day events row */}
       {allDayEvents.length > 0 && (
-        <Box sx={{ flexShrink: 0, borderBottom: '1px solid #e0e0e0', display: 'flex', minHeight: 28 }}>
+        <Box sx={{ flexShrink: 0, display: 'flex', minHeight: 28 }}>
           <Box sx={{ width: 60, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', pr: 1 }}>
-            <Typography variant="caption" sx={{ color: '#70757a', fontSize: '0.65rem' }}>ALL DAY</Typography>
+            
           </Box>
-          <Box sx={{ flex: 1, borderLeft: '1px solid #e0e0e0', p: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          <Box sx={{ flex: 1, borderLeft: '1px solid #e0e0e0', borderBottom: '1px solid #e0e0e0', p: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
             {allDayEvents.map((event) => (
               <Box
                 key={event.id}
@@ -97,19 +103,41 @@ const DayView: React.FC<DayViewProps> = ({
               </Box>
             ))}
           </Box>
+          <Box sx={{ width: 8, flexShrink: 0, borderBottom: '1px solid #e0e0e0' }} />
         </Box>
       )}
 
       {/* Scrollable time grid */}
-      <Box ref={scrollRef} sx={{ flexGrow: 1, overflowY: 'auto', display: 'flex' }}>
+      <Box ref={scrollRef} sx={{ 
+        flexGrow: 1, 
+        overflowY: 'auto', 
+        display: 'flex',
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: 'transparent',
+          borderLeft: '1px solid #e0e0e0',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#dadce0',
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: '#bdc1c6',
+        }
+      }}>
         {/* Time gutter */}
         <Box sx={{ width: 60, flexShrink: 0 }}>
           {HOURS.map((hour) => (
-            <Box key={hour} sx={{ height: HOUR_HEIGHT, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', pr: 1, pt: 0.5 }}>
+            <Box key={hour} sx={{ height: HOUR_HEIGHT, position: 'relative' }}>
               {hour > 0 && (
-                <Typography variant="caption" sx={{ color: '#70757a', fontSize: '0.65rem', lineHeight: 1, mt: '-0.4em' }}>
-                  {format(new Date().setHours(hour, 0, 0, 0), 'h a')}
-                </Typography>
+                <>
+                  <Typography variant="caption" sx={{ position: 'absolute', right: 12, top: '-0.6em', color: '#70757a', fontSize: '0.65rem', lineHeight: 1 }}>
+                    {format(new Date().setHours(hour, 0, 0, 0), 'h a')}
+                  </Typography>
+                  <Box sx={{ position: 'absolute', right: 0, top: 0, width: 8, height: '1px', backgroundColor: '#e0e0e0' }} />
+                </>
               )}
             </Box>
           ))}

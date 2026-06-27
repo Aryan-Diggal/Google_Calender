@@ -105,7 +105,13 @@ function CalendarApp() {
     if (currentView === 'week') {
       const start = startOfWeek(selectedDate);
       const end = endOfWeek(selectedDate);
-      return `${format(start, 'MMM d')} – ${format(end, start.getMonth() === end.getMonth() ? 'd, yyyy' : 'MMM d, yyyy')}`;
+      if (start.getMonth() === end.getMonth()) {
+        return format(start, 'MMMM yyyy');
+      } else if (start.getFullYear() === end.getFullYear()) {
+        return `${format(start, 'MMM')} – ${format(end, 'MMM yyyy')}`;
+      } else {
+        return `${format(start, 'MMM yyyy')} – ${format(end, 'MMM yyyy')}`;
+      }
     }
     return format(selectedDate, 'EEEE, MMMM d, yyyy');
   };
