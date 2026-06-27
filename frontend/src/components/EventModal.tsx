@@ -264,7 +264,17 @@ const EventModal: React.FC<EventModalProps> = ({
     if (event?.id) {
       navigate(`/eventedit/${event.id}`);
     } else {
-      navigate('/eventedit');
+      const finalAllDay = showTimeInputs ? allDay : true;
+      navigate('/eventedit', {
+        state: {
+          title,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          allDay: finalAllDay
+        }
+      });
     }
     onClose();
   };

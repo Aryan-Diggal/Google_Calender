@@ -15,7 +15,7 @@ import {
   Check as CheckIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, addMinutes, addDays } from 'date-fns';
 import { eventService } from '../services/api';
 import { useSnackbar } from 'notistack';
@@ -51,6 +51,7 @@ const getCombinedDate = (date: Date, time: Date, isAllDay: boolean = false) => {
 const EventEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   
   const contentEditableRef = useRef<HTMLDivElement>(null);
@@ -62,13 +63,13 @@ const EventEditPage: React.FC = () => {
   };
   const getDefaultEnd = () => addHours(getDefaultStart(), 1);
 
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(location.state?.title || '');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState<Date>(getDefaultStart());
-  const [endDate, setEndDate] = useState<Date>(getDefaultEnd());
-  const [startTime, setStartTime] = useState<Date>(getDefaultStart());
-  const [endTime, setEndTime] = useState<Date>(getDefaultEnd());
-  const [allDay, setAllDay] = useState(false);
+  const [startDate, setStartDate] = useState<Date>(location.state?.startDate ? new Date(location.state.startDate) : getDefaultStart());
+  const [endDate, setEndDate] = useState<Date>(location.state?.endDate ? new Date(location.state.endDate) : getDefaultEnd());
+  const [startTime, setStartTime] = useState<Date>(location.state?.startTime ? new Date(location.state.startTime) : getDefaultStart());
+  const [endTime, setEndTime] = useState<Date>(location.state?.endTime ? new Date(location.state.endTime) : getDefaultEnd());
+  const [allDay, setAllDay] = useState(location.state?.allDay || false);
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [isSaving, setIsSaving] = useState(false);
   
