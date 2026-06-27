@@ -147,33 +147,35 @@ const EventEditPage: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1, borderBottom: '1px solid transparent', mt: 1 }}>
-        <IconButton onClick={() => navigate('/')} sx={{ color: '#5f6368', mr: 2 }}>
-          <CloseIcon />
-        </IconButton>
-        
-        <Box sx={{ flexGrow: 1, maxWidth: 600 }}>
-          <TextField
-            fullWidth
-            variant="standard"
-            placeholder="Add title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-            InputProps={{
-              disableUnderline: false,
-              sx: {
-                fontSize: '1.5rem',
-                color: '#3c4043',
-                '&::before': { borderBottom: '1px solid transparent !important' },
-                '&:hover::before': { borderBottom: '1px solid #dadce0 !important' },
-                '&::after': { borderBottom: '2px solid #1a73e8 !important' },
-              }
-            }}
-          />
+      <Box sx={{ display: 'flex', px: 8, py: 1, mt: 1, maxWidth: 1200, width: '100%', boxSizing: 'border-box' }}>
+        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+          <IconButton onClick={() => navigate('/')} sx={{ color: '#5f6368', mr: 2, ml: -6 }}>
+            <CloseIcon />
+          </IconButton>
+          
+          <Box sx={{ flexGrow: 1, maxWidth: 600 }}>
+            <TextField
+              fullWidth
+              variant="standard"
+              placeholder="Add title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              autoFocus
+              InputProps={{
+                disableUnderline: false,
+                sx: {
+                  fontSize: '1.5rem',
+                  color: '#3c4043',
+                  '&::before': { borderBottom: '1px solid transparent !important' },
+                  '&:hover::before': { borderBottom: '1px solid #dadce0 !important' },
+                  '&::after': { borderBottom: '2px solid #1a73e8 !important' },
+                }
+              }}
+            />
+          </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', flexGrow: 1, justifyContent: 'center' }}>
+        <Box sx={{ width: 320, display: 'flex', alignItems: 'center', ml: 8 }}>
           <Button
             variant="contained"
             onClick={() => handleSave()}
@@ -186,8 +188,6 @@ const EventEditPage: React.FC = () => {
             {isSaving ? <CircularProgress size={20} color="inherit" /> : 'Save'}
           </Button>
         </Box>
-
-        <Box sx={{ width: 150 }} /> 
       </Box>
 
       {/* Date and Time Row */}
@@ -321,7 +321,7 @@ const EventEditPage: React.FC = () => {
               </Select>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, px: 2, py: 2, backgroundColor: '#f8f9fa', borderTop: '1px solid #dadce0', minHeight: 150 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, px: 2, py: 2, backgroundColor: '#ffffff', borderTop: '1px solid #dadce0', minHeight: 150 }}>
               <NotesIcon sx={{ color: '#5f6368', mt: 1 }} />
               <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <Box sx={{ display: 'flex', gap: 1, mb: 1, color: '#5f6368' }}>
