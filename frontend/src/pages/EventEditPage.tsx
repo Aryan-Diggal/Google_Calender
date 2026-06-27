@@ -363,24 +363,30 @@ const EventEditPage: React.FC = () => {
               <NotesIcon sx={{ color: '#5f6368', mt: 1 }} />
               <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#f1f3f4', borderRadius: '8px', px: 2, py: 2, minHeight: 150 }}>
                 <Box sx={{ display: 'flex', gap: 1, mb: 1, color: '#5f6368' }}>
-                  <FormatBold fontSize="small" sx={{ cursor: 'pointer' }} />
-                  <FormatItalic fontSize="small" sx={{ cursor: 'pointer' }} />
-                  <FormatUnderlined fontSize="small" sx={{ cursor: 'pointer' }} />
-                  <FormatListBulleted fontSize="small" sx={{ ml: 1, cursor: 'pointer' }} />
-                  <FormatListNumbered fontSize="small" sx={{ cursor: 'pointer' }} />
-                  <LinkIcon fontSize="small" sx={{ ml: 1, cursor: 'pointer' }} />
-                  <FormatClear fontSize="small" sx={{ ml: 1, cursor: 'pointer' }} />
+                  <FormatBold fontSize="small" onMouseDown={(e) => { e.preventDefault(); document.execCommand('bold', false); }} sx={{ cursor: 'pointer', '&:hover': { color: '#202124' } }} />
+                  <FormatItalic fontSize="small" onMouseDown={(e) => { e.preventDefault(); document.execCommand('italic', false); }} sx={{ cursor: 'pointer', '&:hover': { color: '#202124' } }} />
+                  <FormatUnderlined fontSize="small" onMouseDown={(e) => { e.preventDefault(); document.execCommand('underline', false); }} sx={{ cursor: 'pointer', '&:hover': { color: '#202124' } }} />
+                  <FormatListBulleted fontSize="small" sx={{ ml: 1, cursor: 'pointer', opacity: 0.5 }} />
+                  <FormatListNumbered fontSize="small" sx={{ cursor: 'pointer', opacity: 0.5 }} />
+                  <LinkIcon fontSize="small" sx={{ ml: 1, cursor: 'pointer', opacity: 0.5 }} />
+                  <FormatClear fontSize="small" sx={{ ml: 1, cursor: 'pointer', opacity: 0.5 }} />
                 </Box>
-                <TextField
-                  fullWidth
-                  variant="standard"
-                  placeholder="Add description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  multiline
-                  InputProps={{
-                    disableUnderline: true,
-                    sx: { fontSize: '0.875rem', color: '#5f6368', '& textarea': { p: 0 } }
+                <Box
+                  contentEditable
+                  onInput={(e) => setDescription(e.currentTarget.innerHTML)}
+                  dangerouslySetInnerHTML={{ __html: description }}
+                  suppressContentEditableWarning
+                  sx={{
+                    flexGrow: 1,
+                    fontSize: '0.875rem',
+                    color: '#3c4043',
+                    outline: 'none',
+                    minHeight: '100px',
+                    '&:empty:before': {
+                      content: '"Add description"',
+                      color: '#5f6368',
+                      pointerEvents: 'none'
+                    }
                   }}
                 />
               </Box>

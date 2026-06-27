@@ -383,7 +383,23 @@ const EventModal: React.FC<EventModalProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><PeopleIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add guests</Typography></Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><VideocamIcon sx={{ color: '#fbbc04' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add Google Meet video conferencing</Typography></Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><LocationIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add location</Typography></Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><NotesIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add description or a Google Drive attachment</Typography></Box>
+          {description ? (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+              <NotesIcon sx={{ color: '#5f6368' }} />
+              <Typography 
+                component="div" 
+                sx={{ color: '#3c4043', fontSize: '0.875rem', px: 1, py: 0, ml: -1, '& p': { margin: 0 } }} 
+                dangerouslySetInnerHTML={{ __html: description }} 
+              />
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <NotesIcon sx={{ color: '#5f6368' }} />
+              <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>
+                Add description or a Google Drive attachment
+              </Typography>
+            </Box>
+          )}
           
           {!showAdvanced ? (
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }} onClick={() => setShowAdvanced(true)}>
