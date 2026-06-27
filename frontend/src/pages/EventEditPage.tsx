@@ -18,7 +18,7 @@ import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, ad
 import { eventService } from '../services/api';
 import { useSnackbar } from 'notistack';
 
-const generateTimeOptions = () => {
+const generateStartTimeOptions = () => {
   const options = [];
   for (let i = 0; i < 24 * 4; i++) {
     const hours = Math.floor(i / 4);
@@ -32,22 +32,18 @@ const generateTimeOptions = () => {
 
 const formatTime = (date: Date) => format(date, 'h:mma').toLowerCase();
 
-const getDurationString = (startDate: Date, startTime: Date, endDate: Date, optionTime: Date) => {
-  const start = new Date(startDate);
-  start.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-  
-  const end = new Date(endDate);
-  end.setHours(optionTime.getHours(), optionTime.getMinutes(), 0, 0);
-
-  let diffMinutes = differenceInMinutes(end, start);
-  
-  if (diffMinutes <= 0 && isSameDay(startDate, endDate)) {
-    diffMinutes += 24 * 60; 
-  }
-  
+const getDurationString = (startObj: Date, endObj: Date) => {
+  let diffMinutes = differenceInMinutes(endObj, startObj);
   if (diffMinutes <= 0) return '';
   const diffHours = diffMinutes / 60;
   return `(${diffHours} hr${diffHours !== 1 ? 's' : ''})`;
+};
+
+const getCombinedDate = (date: Date, time: Date, isAllDay: boolean = false) => {
+  if (isAllDay) return startOfDay(date);
+  const result = new Date(date);
+  result.setHours(time.getHours(), time.getMinutes(), 0, 0);
+  return result;
 };
 
 const EventEditPage: React.FC = () => {
@@ -71,40 +67,41 @@ const EventEditPage: React.FC = () => {
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [isSaving, setIsSaving] = useState(false);
   
-  const timeOptions = useMemo(() => generateTimeOptions(), []);
+  const startTimeOptions = useMemo(() => generateStartTimeOptions(), []);
+
+  const endTimeOptions = useMemo(() => {
+    const options = [];
+    const startObj = getCombinedDate(startDate, startTime);
+
+    if (isSameDay(startDate, endDate)) {
+      for (let i = 1; i <= 24 * 4; i++) {
+        options.push(addMinutes(startObj, i * 15));
+      }
+    } else {
+      const endStartOfDay = startOfDay(endDate);
+      for (let i = 0; i < 24 * 4; i++) {
+        options.push(addMinutes(endStartOfDay, i * 15));
+      }
+    }
+    return options;
+  }, [startDate, startTime, endDate]);
 
   const handleStartTimeChange = (newTimeString: string) => {
     const newTime = parse(newTimeString, 'h:mma', new Date());
     setStartTime(newTime);
     
-    const newEnd = addHours(newTime, 1);
-    setEndTime(newEnd);
+    // Maintain duration if possible, default to 1 hr if not
+    const startObj = getCombinedDate(startDate, newTime);
+    const newEndObj = addHours(startObj, 1);
     
-    if (isSameDay(startDate, endDate) && newEnd.getDate() !== newTime.getDate()) {
-      setEndDate(addDays(endDate, 1));
-    }
+    setEndDate(newEndObj);
+    setEndTime(newEndObj);
   };
 
-  const handleEndTimeChange = (newTimeString: string) => {
-    const newTime = parse(newTimeString, 'h:mma', new Date());
-    setEndTime(newTime);
-
-    const startObj = new Date(startDate);
-    startObj.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-    const newEndObj = new Date(endDate);
-    newEndObj.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
-
-    // If picking an earlier time on the same day, bump the end date forward 1 day
-    if (isSameDay(startDate, endDate) && differenceInMinutes(newEndObj, startObj) <= 0) {
-      setEndDate(addDays(endDate, 1));
-    }
-  };
-
-  const getCombinedDate = (date: Date, time: Date, isAllDay: boolean) => {
-    if (isAllDay) return startOfDay(date);
-    const result = new Date(date);
-    result.setHours(time.getHours(), time.getMinutes(), 0, 0);
-    return result;
+  const handleEndTimeChange = (newIsoString: string) => {
+    const newEndObj = new Date(newIsoString);
+    setEndDate(newEndObj);
+    setEndTime(newEndObj);
   };
 
   const handleSave = async (forceSave = false) => {
@@ -146,6 +143,8 @@ const EventEditPage: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  const currentEndObj = getCombinedDate(endDate, endTime);
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
@@ -194,72 +193,53 @@ const EventEditPage: React.FC = () => {
 
       {/* Date and Time Row */}
       <Box sx={{ pl: 8, pr: 4, py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <DatePicker
-            value={startDate}
-            onChange={(val) => { if(val) setStartDate(val); }}
-            format="EEEE, d MMMM"
-            slotProps={{
-              textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } }
-            }}
-          />
-          
-          {!allDay && (
-            <>
-              <Select
-                value={formatTime(startTime)}
-                onChange={(e) => handleStartTimeChange(e.target.value)}
-                variant="standard"
-                disableUnderline
-                sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}
-              >
-                {timeOptions.map((t) => (
-                  <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>
-                ))}
+        
+        {isSameDay(startDate, endDate) || allDay ? (
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <DatePicker
+              value={startDate}
+              onChange={(val) => { if(val) setStartDate(val); }}
+              format="EEEE, d MMMM"
+              slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }}
+            />
+            
+            {!allDay && (
+              <>
+                <Select value={formatTime(startTime)} onChange={(e) => handleStartTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}>
+                  {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
+                </Select>
+                <Typography sx={{ color: '#5f6368', fontSize: '0.875rem' }}>–</Typography>
+                
+                <Select value={currentEndObj.toISOString()} onChange={(e) => handleEndTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}>
+                  {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
+                </Select>
+              </>
+            )}
+
+            {allDay && (
+              <>
+                <Typography sx={{ color: '#5f6368', fontSize: '0.875rem' }}>to</Typography>
+                <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+              </>
+            )}
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DatePicker value={startDate} onChange={(val) => { if(val) setStartDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+              <Select value={formatTime(startTime)} onChange={(e) => handleStartTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}>
+                {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
               </Select>
               <Typography sx={{ color: '#5f6368', fontSize: '0.875rem' }}>–</Typography>
-              
-              {!isSameDay(startDate, endDate) && (
-                <DatePicker
-                  value={endDate}
-                  onChange={(val) => { if(val) setEndDate(val); }}
-                  format="EEEE, d MMMM"
-                  slotProps={{
-                    textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer' } } }
-                  }}
-                />
-              )}
-
-              <Select
-                value={formatTime(endTime)}
-                onChange={(e) => handleEndTimeChange(e.target.value)}
-                variant="standard"
-                disableUnderline
-                sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}
-              >
-                {timeOptions.map((t) => (
-                  <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>
-                    {formatTime(t)} {getDurationString(startDate, startTime, endDate, t)}
-                  </MenuItem>
-                ))}
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+              <Select value={currentEndObj.toISOString()} onChange={(e) => handleEndTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}>
+                {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
               </Select>
-            </>
-          )}
-
-          {allDay && (
-            <>
-              <Typography sx={{ color: '#5f6368', fontSize: '0.875rem' }}>to</Typography>
-              <DatePicker
-                value={endDate}
-                onChange={(val) => { if(val) setEndDate(val); }}
-                format="EEEE, d MMMM"
-                slotProps={{
-                  textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } }
-                }}
-              />
-            </>
-          )}
-        </Box>
+            </Box>
+          </Box>
+        )}
 
         <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
           <FormControlLabel

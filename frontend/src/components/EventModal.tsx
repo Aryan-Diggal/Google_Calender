@@ -30,7 +30,7 @@ interface EventModalProps {
   defaultStartTime?: Date | null;
 }
 
-const generateTimeOptions = () => {
+const generateStartTimeOptions = () => {
   const options = [];
   for (let i = 0; i < 24 * 4; i++) {
     const hours = Math.floor(i / 4);
@@ -46,22 +46,18 @@ const formatTime = (date: Date) => {
   return format(date, 'h:mma').toLowerCase();
 };
 
-const getDurationString = (startDate: Date, startTime: Date, endDate: Date, optionTime: Date) => {
-  const start = new Date(startDate);
-  start.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-  
-  const end = new Date(endDate);
-  end.setHours(optionTime.getHours(), optionTime.getMinutes(), 0, 0);
-
-  let diffMinutes = differenceInMinutes(end, start);
-  
-  if (diffMinutes <= 0 && isSameDay(startDate, endDate)) {
-    diffMinutes += 24 * 60; 
-  }
-  
+const getDurationString = (startObj: Date, endObj: Date) => {
+  let diffMinutes = differenceInMinutes(endObj, startObj);
   if (diffMinutes <= 0) return '';
   const diffHours = diffMinutes / 60;
   return `(${diffHours} hr${diffHours !== 1 ? 's' : ''})`;
+};
+
+const getCombinedDate = (date: Date, time: Date, isAllDay: boolean = false) => {
+  if (isAllDay) return startOfDay(date);
+  const result = new Date(date);
+  result.setHours(time.getHours(), time.getMinutes(), 0, 0);
+  return result;
 };
 
 const EventModal: React.FC<EventModalProps> = ({
@@ -75,7 +71,6 @@ const EventModal: React.FC<EventModalProps> = ({
     const nextSlot = addMinutes(now, 30 - remainder);
 
     if (defaultStartTime) {
-      // If time is exactly 00:00:00, it's a date click from MonthView. Use the date, but current time slot.
       if (defaultStartTime.getHours() === 0 && defaultStartTime.getMinutes() === 0) {
         const res = new Date(defaultStartTime);
         res.setHours(nextSlot.getHours(), nextSlot.getMinutes(), 0, 0);
@@ -111,7 +106,24 @@ const EventModal: React.FC<EventModalProps> = ({
 
   const [activeTab, setActiveTab] = useState<'event' | 'task'>('event');
 
-  const timeOptions = useMemo(() => generateTimeOptions(), []);
+  const startTimeOptions = useMemo(() => generateStartTimeOptions(), []);
+
+  const endTimeOptions = useMemo(() => {
+    const options = [];
+    const startObj = getCombinedDate(startDate, startTime);
+
+    if (isSameDay(startDate, endDate)) {
+      for (let i = 1; i <= 24 * 4; i++) {
+        options.push(addMinutes(startObj, i * 15));
+      }
+    } else {
+      const endStartOfDay = startOfDay(endDate);
+      for (let i = 0; i < 24 * 4; i++) {
+        options.push(addMinutes(endStartOfDay, i * 15));
+      }
+    }
+    return options;
+  }, [startDate, startTime, endDate]);
 
   useEffect(() => {
     if (event) {
@@ -150,38 +162,22 @@ const EventModal: React.FC<EventModalProps> = ({
     setOverlappingEvents([]);
   }, [startDate, endDate, startTime, endTime, allDay]);
 
-  const getCombinedDate = (date: Date, time: Date, isAllDay: boolean) => {
-    if (isAllDay) return startOfDay(date);
-    const result = new Date(date);
-    result.setHours(time.getHours(), time.getMinutes(), 0, 0);
-    return result;
-  };
-
   const handleStartTimeChange = (newTimeString: string) => {
     const newTime = parse(newTimeString, 'h:mma', new Date());
     setStartTime(newTime);
     
-    const newEnd = addHours(newTime, 1);
-    setEndTime(newEnd);
+    // Maintain duration if possible, default to 1 hr if not
+    const startObj = getCombinedDate(startDate, newTime);
+    const newEndObj = addHours(startObj, 1);
     
-    if (isSameDay(startDate, endDate) && newEnd.getDate() !== newTime.getDate()) {
-      setEndDate(addDays(endDate, 1));
-    }
+    setEndDate(newEndObj);
+    setEndTime(newEndObj);
   };
 
-  const handleEndTimeChange = (newTimeString: string) => {
-    const newTime = parse(newTimeString, 'h:mma', new Date());
-    setEndTime(newTime);
-
-    const startObj = new Date(startDate);
-    startObj.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-    const newEndObj = new Date(endDate);
-    newEndObj.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
-
-    // If picking an earlier time on the same day, bump the end date forward 1 day
-    if (isSameDay(startDate, endDate) && differenceInMinutes(newEndObj, startObj) <= 0) {
-      setEndDate(addDays(endDate, 1));
-    }
+  const handleEndTimeChange = (newIsoString: string) => {
+    const newEndObj = new Date(newIsoString);
+    setEndDate(newEndObj);
+    setEndTime(newEndObj);
   };
 
   const checkOverlap = async (startISO: string, endISO: string): Promise<Event[]> => {
@@ -231,10 +227,7 @@ const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  const handleMoreOptions = () => {
-    navigate('/eventedit');
-    onClose();
-  };
+  const currentEndObj = getCombinedDate(endDate, endTime);
 
   return (
     <Dialog
@@ -248,59 +241,25 @@ const EventModal: React.FC<EventModalProps> = ({
         animate: { opacity: 1, scale: 1, y: 0 },
         exit: { opacity: 0, scale: 0.95, y: -20 },
         transition: { duration: 0.2, ease: 'easeOut' },
-        sx: {
-          borderRadius: '8px',
-          boxShadow: '0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2)',
-          m: 2,
-        },
+        sx: { borderRadius: '8px', boxShadow: '0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2)', m: 2 },
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#f1f3f4', px: 1, py: 0.5 }}>
-        <IconButton size="small" sx={{ color: '#5f6368', cursor: 'grab' }}>
-          <DragHandleIcon fontSize="small" />
-        </IconButton>
-        <IconButton size="small" onClick={onClose} sx={{ color: '#5f6368' }}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        <IconButton size="small" sx={{ color: '#5f6368', cursor: 'grab' }}><DragHandleIcon fontSize="small" /></IconButton>
+        <IconButton size="small" onClick={onClose} sx={{ color: '#5f6368' }}><CloseIcon fontSize="small" /></IconButton>
       </Box>
 
       <DialogContent sx={{ px: 3, pt: 2, pb: 1, overflowY: 'visible' }}>
         <Box sx={{ pl: 5, mb: 1.5 }}>
           <TextField
-            fullWidth
-            variant="standard"
-            placeholder="Add title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-            InputProps={{
-              disableUnderline: false,
-              sx: {
-                fontSize: '1.375rem',
-                color: '#3c4043',
-                '&::before': { borderBottom: '2px solid transparent !important' },
-                '&:hover::before': { borderBottom: '2px solid #dadce0 !important' },
-                '&::after': { borderBottom: '2px solid #1a73e8 !important' },
-              }
-            }}
+            fullWidth variant="standard" placeholder="Add title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus
+            InputProps={{ disableUnderline: false, sx: { fontSize: '1.375rem', color: '#3c4043', '&::before': { borderBottom: '2px solid transparent !important' }, '&:hover::before': { borderBottom: '2px solid #dadce0 !important' }, '&::after': { borderBottom: '2px solid #1a73e8 !important' } } }}
           />
         </Box>
 
         <Box sx={{ pl: 5, mb: 2, display: 'flex', gap: 1 }}>
-          <Button
-            size="small"
-            onClick={() => setActiveTab('event')}
-            sx={{ textTransform: 'none', backgroundColor: activeTab === 'event' ? '#e8f0fe' : 'transparent', color: activeTab === 'event' ? '#1a73e8' : '#3c4043', borderRadius: '4px', fontWeight: 500, px: 2, '&:hover': { backgroundColor: activeTab === 'event' ? '#e8f0fe' : '#f1f3f4' } }}
-          >
-            Event
-          </Button>
-          <Button
-            size="small"
-            onClick={() => setActiveTab('task')}
-            sx={{ textTransform: 'none', backgroundColor: activeTab === 'task' ? '#e8f0fe' : 'transparent', color: activeTab === 'task' ? '#1a73e8' : '#3c4043', borderRadius: '4px', fontWeight: 500, px: 2, '&:hover': { backgroundColor: activeTab === 'task' ? '#e8f0fe' : '#f1f3f4' } }}
-          >
-            Task
-          </Button>
+          <Button size="small" onClick={() => setActiveTab('event')} sx={{ textTransform: 'none', backgroundColor: activeTab === 'event' ? '#e8f0fe' : 'transparent', color: activeTab === 'event' ? '#1a73e8' : '#3c4043', borderRadius: '4px', fontWeight: 500, px: 2, '&:hover': { backgroundColor: activeTab === 'event' ? '#e8f0fe' : '#f1f3f4' } }}>Event</Button>
+          <Button size="small" onClick={() => setActiveTab('task')} sx={{ textTransform: 'none', backgroundColor: activeTab === 'task' ? '#e8f0fe' : 'transparent', color: activeTab === 'task' ? '#1a73e8' : '#3c4043', borderRadius: '4px', fontWeight: 500, px: 2, '&:hover': { backgroundColor: activeTab === 'task' ? '#e8f0fe' : '#f1f3f4' } }}>Task</Button>
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -309,74 +268,48 @@ const EventModal: React.FC<EventModalProps> = ({
             <ScheduleIcon sx={{ color: '#5f6368', mt: 1 }} />
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
               
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                <DatePicker
-                  value={startDate}
-                  onChange={(val) => { if(val) setStartDate(val); }}
-                  format="EEEE, d MMMM"
-                  slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }}
-                />
-                
-                {!allDay && (
-                  <>
-                    <Select
-                      value={formatTime(startTime)}
-                      onChange={(e) => handleStartTimeChange(e.target.value)}
-                      variant="standard"
-                      disableUnderline
-                      sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
-                    >
-                      {timeOptions.map((t) => (
-                        <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>
-                          {formatTime(t)}
-                        </MenuItem>
-                      ))}
+              {isSameDay(startDate, endDate) || allDay ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <DatePicker value={startDate} onChange={(val) => { if(val) setStartDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+                  
+                  {!allDay && (
+                    <>
+                      <Select value={formatTime(startTime)} onChange={(e) => handleStartTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}>
+                        {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
+                      </Select>
+                      <Typography sx={{ color: '#5f6368', mx: 0.5 }}>–</Typography>
+                      <Select value={currentEndObj.toISOString()} onChange={(e) => handleEndTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}>
+                        {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
+                      </Select>
+                    </>
+                  )}
+                  {allDay && (
+                    <>
+                      <Typography sx={{ color: '#5f6368', mx: 0.5 }}>–</Typography>
+                      <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+                    </>
+                  )}
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DatePicker value={startDate} onChange={(val) => { if(val) setStartDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+                    <Select value={formatTime(startTime)} onChange={(e) => handleStartTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}>
+                      {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
                     </Select>
                     <Typography sx={{ color: '#5f6368', mx: 0.5 }}>–</Typography>
-                    
-                    {!isSameDay(startDate, endDate) && (
-                      <DatePicker
-                        value={endDate}
-                        onChange={(val) => { if(val) setEndDate(val); }}
-                        format="EEEE, d MMMM"
-                        slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer' } } } }}
-                      />
-                    )}
-
-                    <Select
-                      value={formatTime(endTime)}
-                      onChange={(e) => handleEndTimeChange(e.target.value)}
-                      variant="standard"
-                      disableUnderline
-                      sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
-                    >
-                      {timeOptions.map((t) => (
-                        <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>
-                          {formatTime(t)} {getDurationString(startDate, startTime, endDate, t)}
-                        </MenuItem>
-                      ))}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+                    <Select value={currentEndObj.toISOString()} onChange={(e) => handleEndTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}>
+                      {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
                     </Select>
-                  </>
-                )}
-
-                {allDay && (
-                  <>
-                    <Typography sx={{ color: '#5f6368', mx: 0.5 }}>–</Typography>
-                    <DatePicker
-                      value={endDate}
-                      onChange={(val) => { if(val) setEndDate(val); }}
-                      format="EEEE, d MMMM"
-                      slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }}
-                    />
-                  </>
-                )}
-              </Box>
+                  </Box>
+                </Box>
+              )}
               
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <FormControlLabel
-                  control={<Checkbox size="small" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} sx={{ py: 0 }} />}
-                  label={<Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>All day</Typography>}
-                />
+                <FormControlLabel control={<Checkbox size="small" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} sx={{ py: 0 }} />} label={<Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>All day</Typography>} />
               </Box>
               
               <Box>
@@ -387,37 +320,17 @@ const EventModal: React.FC<EventModalProps> = ({
                   <MenuItem value="monthly" sx={{ fontSize: '0.875rem' }}>Monthly on the {Math.ceil(startDate.getDate()/7)} {format(startDate, 'EEEE')}</MenuItem>
                 </Select>
               </Box>
-
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <PeopleIcon sx={{ color: '#5f6368' }} />
-            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add guests</Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <VideocamIcon sx={{ color: '#fbbc04' }} />
-            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add Google Meet video conferencing</Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <LocationIcon sx={{ color: '#5f6368' }} />
-            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add location</Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <NotesIcon sx={{ color: '#5f6368' }} />
-            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add description or a Google Drive attachment</Typography>
-          </Box>
-
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><PeopleIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add guests</Typography></Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><VideocamIcon sx={{ color: '#fbbc04' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add Google Meet video conferencing</Typography></Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><LocationIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add location</Typography></Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><NotesIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add description or a Google Drive attachment</Typography></Box>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
             <CalendarIcon sx={{ color: '#5f6368', mt: 0.5 }} />
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>Aryan Diggal</Typography>
-                <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} />
-              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>Aryan Diggal</Typography><Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} /></Box>
               <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>Free · Default visibility · Notify the day before at 5pm</Typography>
             </Box>
           </Box>
@@ -425,10 +338,7 @@ const EventModal: React.FC<EventModalProps> = ({
           <AnimatePresence>
             {overlappingEvents.length > 0 && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                <Alert
-                  severity="warning" icon={<WarningIcon />} sx={{ mt: 1, mb: 1, borderRadius: '8px' }}
-                  action={<Button size="small" color="warning" variant="contained" onClick={() => handleSave(true)} disabled={isSaving}>{isSaving ? <CircularProgress size={16} /> : 'Save anyway'}</Button>}
-                >
+                <Alert severity="warning" icon={<WarningIcon />} sx={{ mt: 1, mb: 1, borderRadius: '8px' }} action={<Button size="small" color="warning" variant="contained" onClick={() => handleSave(true)} disabled={isSaving}>{isSaving ? <CircularProgress size={16} /> : 'Save anyway'}</Button>}>
                   <Typography variant="body2" fontWeight={600}>Time conflict detected!</Typography>
                 </Alert>
               </motion.div>
