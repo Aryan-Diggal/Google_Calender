@@ -238,6 +238,8 @@ const EventModal: React.FC<EventModalProps> = ({
       open={open}
       onClose={onClose}
       maxWidth="md"
+      hideBackdrop={true}
+      disableScrollLock={true}
       PaperProps={{
         component: motion.div,
         initial: { opacity: 0, scale: 0.95, y: -20 },
