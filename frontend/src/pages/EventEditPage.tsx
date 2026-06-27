@@ -13,12 +13,14 @@ import {
   FormatBold, FormatItalic, FormatUnderlined, FormatListBulleted, FormatListNumbered, Link as LinkIcon, FormatClear,
   ArrowDropDown as ArrowDropDownIcon,
   Check as CheckIcon,
+  WarningAmber as WarningAmberIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, addMinutes, addDays } from 'date-fns';
 import { eventService } from '../services/api';
 import { useSnackbar } from 'notistack';
+import { Event } from '../types/Event';
 
 const generateStartTimeOptions = () => {
   const options = [];
@@ -73,6 +75,10 @@ const EventEditPage: React.FC = () => {
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [isSaving, setIsSaving] = useState(false);
   
+  const [checkingOverlap, setCheckingOverlap] = useState(false);
+  const [overlappingEvents, setOverlappingEvents] = useState<Event[]>([]);
+  const [overlapChecked, setOverlapChecked] = useState(false);
+  
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
 
@@ -98,6 +104,11 @@ const EventEditPage: React.FC = () => {
     }
     return options;
   }, [startDate, startTime, endDate]);
+
+  useEffect(() => {
+    setOverlapChecked(false);
+    setOverlappingEvents([]);
+  }, [startDate, endDate, startTime, endTime, allDay]);
 
   const handleStartTimeChange = (newTimeString: string) => {
     const newTime = parse(newTimeString, 'h:mma', new Date());
@@ -152,15 +163,17 @@ const EventEditPage: React.FC = () => {
     let end = getCombinedDate(endDate, endTime, allDay);
     if (allDay) end = addHours(startOfDay(endDate), 23);
 
-    if (!forceSave) {
+    if (!forceSave && !overlapChecked) {
+      setCheckingOverlap(true);
       let overlaps = await eventService.getOverlappingEvents(start.toISOString(), end.toISOString());
       if (id) {
         overlaps = overlaps.filter(o => o.id !== Number(id));
       }
+      setCheckingOverlap(false);
+      setOverlapChecked(true);
       if (overlaps.length > 0) {
-        if (!window.confirm(`Time conflict detected! Overlaps with ${overlaps.map(o => o.title).join(', ')}. Save anyway?`)) {
-          return;
-        }
+        setOverlappingEvents(overlaps);
+        return; // wait for user to click Save anyway
       }
     }
 
@@ -239,6 +252,18 @@ const EventEditPage: React.FC = () => {
           </Button>
         </Box>
       </Box>
+
+      {overlapChecked && overlappingEvents.length > 0 && (
+        <Box sx={{ backgroundColor: '#fef7e0', p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', mx: 8, mt: 1, borderRadius: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningAmberIcon sx={{ color: '#f29900' }} />
+            <Typography sx={{ fontWeight: 600, fontSize: '0.875rem' }}>Time conflict detected! Overlaps with {overlappingEvents.map(e => e.title || '(No title)').join(', ')}.</Typography>
+          </Box>
+          <Button onClick={() => handleSave(true)} variant="contained" sx={{ backgroundColor: '#f29900', color: '#fff', '&:hover': { backgroundColor: '#e69100' }, textTransform: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>
+            Save anyway
+          </Button>
+        </Box>
+      )}
 
       {/* Date and Time Row */}
       <Box sx={{ pl: 8, pr: 4, py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
