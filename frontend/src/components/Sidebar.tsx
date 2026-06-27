@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         '& .MuiDrawer-paper': {
           width: 256,
           boxSizing: 'border-box',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#f8f9fa',
           borderRight: 'none',
           overflowX: 'hidden',
           // Make it sit below the AppBar (64px)

@@ -172,14 +172,14 @@ function CalendarApp() {
     : '?';
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: '#f8f9fa' }}>
 
       {/* ── Single unified top AppBar (no duplicate in sidebar) ── */}
       <AppBar
         position="static"
         elevation={0}
         sx={{
-          backgroundColor: '#ffffff',
+          backgroundColor: '#f8f9fa',
           color: '#5f6368',
           borderBottom: 'none',
           zIndex: 1200,
@@ -522,7 +522,7 @@ function CalendarApp() {
             pt: 1,
             pb: 2,
             gap: 2.5,
-            backgroundColor: '#ffffff',
+            backgroundColor: '#f8f9fa',
             zIndex: 10,
           }}
         >
