@@ -457,6 +457,59 @@ function CalendarApp() {
             </AnimatePresence>
           </Box>
         </Box>
+
+        {/* Right Add-ons Sidebar */}
+        <Box
+          sx={{
+            width: 56,
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pt: 1,
+            pb: 2,
+            gap: 2.5,
+            backgroundColor: '#ffffff',
+            zIndex: 10,
+          }}
+        >
+          <Tooltip title="Keep" placement="left">
+            <IconButton sx={{ width: 40, height: 40 }}>
+              <img src="https://www.gstatic.com/images/branding/product/1x/keep_48dp.png" alt="Keep" style={{ width: 20, height: 20 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Tasks" placement="left">
+            <IconButton sx={{ width: 40, height: 40 }}>
+              <img src="https://www.gstatic.com/images/branding/product/1x/tasks_48dp.png" alt="Tasks" style={{ width: 20, height: 20 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Contacts" placement="left">
+            <IconButton sx={{ width: 40, height: 40 }}>
+              <img src="https://www.gstatic.com/images/branding/product/1x/contacts_48dp.png" alt="Contacts" style={{ width: 20, height: 20 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Maps" placement="left">
+            <IconButton sx={{ width: 40, height: 40 }}>
+              <img src="https://www.gstatic.com/images/branding/product/1x/maps_48dp.png" alt="Maps" style={{ width: 20, height: 20 }} />
+            </IconButton>
+          </Tooltip>
+
+          <Divider sx={{ width: 24, my: 1 }} />
+
+          <Tooltip title="Get add-ons" placement="left">
+            <IconButton sx={{ width: 40, height: 40 }}>
+              <AddIcon sx={{ color: '#3c4043' }} />
+            </IconButton>
+          </Tooltip>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Tooltip title="Hide side panel" placement="left">
+            <IconButton sx={{ width: 40, height: 40, '&:hover': { backgroundColor: '#f1f3f4' } }}>
+              <ChevronRightIcon sx={{ color: '#3c4043' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       <EventModal
