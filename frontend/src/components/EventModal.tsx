@@ -292,7 +292,7 @@ const EventModal: React.FC<EventModalProps> = ({
         <IconButton size="small" onClick={onClose} sx={{ color: '#5f6368' }}><CloseIcon fontSize="small" /></IconButton>
       </Box>
 
-      <DialogContent sx={{ px: 3, pt: 2, pb: 1, overflowY: 'auto', overflowX: 'hidden', maxHeight: '420px' }}>
+      <DialogContent sx={{ px: 3, pt: 2, pb: 1, overflowY: 'auto', overflowX: 'hidden', maxHeight: '500px' }}>
         <Box sx={{ pl: 5, mb: 1.5 }}>
           <TextField
             fullWidth variant="standard" placeholder="Add title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus
