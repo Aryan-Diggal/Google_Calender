@@ -223,7 +223,7 @@ const EventModal: React.FC<EventModalProps> = ({
       setOverlapChecked(true);
       if (overlaps.length > 0) {
         setTimeout(() => {
-          warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
       }
       return overlaps;
