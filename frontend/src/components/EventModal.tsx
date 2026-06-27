@@ -1,39 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Box,
-  IconButton,
-  FormControlLabel,
-  Switch,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Typography,
-  Alert,
-  Chip,
-  CircularProgress,
-  Tooltip,
+  Dialog, DialogContent, DialogActions,
+  TextField, Button, Box, IconButton, Typography,
 } from '@mui/material';
 import {
   Close as CloseIcon,
-  Delete as DeleteIcon,
+  DragHandle as DragHandleIcon,
   Schedule as ScheduleIcon,
-  LocationOn as LocationIcon,
+  PeopleOutline as PeopleIcon,
+  VideocamOutlined as VideocamIcon,
+  LocationOnOutlined as LocationIcon,
   Notes as NotesIcon,
-  Palette as PaletteIcon,
-  Repeat as RepeatIcon,
-  Warning as WarningIcon,
+  CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
-import { format, addHours, parseISO } from 'date-fns';
+import { motion } from 'framer-motion';
+import { format, addHours } from 'date-fns';
 import { Event } from '../types/Event';
-import { eventService } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 interface EventModalProps {
   open: boolean;
@@ -44,32 +27,15 @@ interface EventModalProps {
   defaultStartTime?: Date | null;
 }
 
-const EVENT_COLORS = [
-  { label: 'Blueberry', value: '#1a73e8' },
-  { label: 'Tomato', value: '#ea4335' },
-  { label: 'Sage', value: '#33b679' },
-  { label: 'Flamingo', value: '#e67c73' },
-  { label: 'Tangerine', value: '#f6bf26' },
-  { label: 'Banana', value: '#f6bf26' },
-  { label: 'Peacock', value: '#039be5' },
-  { label: 'Graphite', value: '#616161' },
-  { label: 'Lavender', value: '#7986cb' },
-  { label: 'Grape', value: '#8e24aa' },
-];
-
 const formatDateTimeLocal = (date: Date): string => {
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
 const EventModal: React.FC<EventModalProps> = ({
-  open,
-  onClose,
-  onSave,
-  onDelete,
-  event,
-  defaultStartTime,
+  open, onClose, onSave, onDelete, event, defaultStartTime,
 }) => {
+  const navigate = useNavigate();
   const isEditing = Boolean(event);
 
   const getDefaultStart = () => {
@@ -94,14 +60,10 @@ const EventModal: React.FC<EventModalProps> = ({
   const [color, setColor] = useState('#1a73e8');
   const [allDay, setAllDay] = useState(false);
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
-  const [overlappingEvents, setOverlappingEvents] = useState<Event[]>([]);
-  const [overlapChecked, setOverlapChecked] = useState(false);
-  const [checkingOverlap, setCheckingOverlap] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [activeTab, setActiveTab] = useState<'event' | 'task'>('event');
 
-  // Populate fields when editing
   useEffect(() => {
     if (event) {
       setTitle(event.title);
@@ -122,61 +84,10 @@ const EventModal: React.FC<EventModalProps> = ({
       setAllDay(false);
       setRecurrence('none');
     }
-    setOverlappingEvents([]);
-    setOverlapChecked(false);
-    setErrors({});
   }, [event, open, defaultStartTime]);
 
-  // Check overlap when times change
-  useEffect(() => {
-    setOverlapChecked(false);
-    setOverlappingEvents([]);
-  }, [startTime, endTime]);
-
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!title.trim()) newErrors.title = 'Title is required';
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    if (isNaN(start.getTime())) newErrors.startTime = 'Invalid start time';
-    if (isNaN(end.getTime())) newErrors.endTime = 'Invalid end time';
-    if (start >= end) newErrors.endTime = 'End time must be after start time';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const checkOverlap = async (): Promise<Event[]> => {
-    try {
-      setCheckingOverlap(true);
-      const start = new Date(startTime);
-      const end = new Date(endTime);
-      const overlaps = await eventService.getOverlappingEvents(
-        start.toISOString(),
-        end.toISOString(),
-        event?.id
-      );
-      setOverlappingEvents(overlaps);
-      setOverlapChecked(true);
-      return overlaps;
-    } catch {
-      return [];
-    } finally {
-      setCheckingOverlap(false);
-    }
-  };
-
   const handleSave = async () => {
-    if (!validate()) return;
-
-    // If we haven't checked for overlaps yet, check first
-    if (!overlapChecked) {
-      const overlaps = await checkOverlap();
-      if (overlaps.length > 0) {
-        // Show overlap warning — user must confirm
-        return;
-      }
-    }
-
+    if (!title.trim()) return;
     try {
       setIsSaving(true);
       const eventData: Event = {
@@ -195,32 +106,17 @@ const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  const handleSaveAnyway = async () => {
-    try {
-      setIsSaving(true);
-      const eventData: Event = {
-        title: title.trim(),
-        description: description.trim() || undefined,
-        startTime: new Date(startTime).toISOString(),
-        endTime: new Date(endTime).toISOString(),
-        location: location.trim() || undefined,
-        color,
-        allDay,
-        recurrence,
-      };
-      await onSave(eventData);
-    } finally {
-      setIsSaving(false);
-    }
+  const handleMoreOptions = () => {
+    navigate('/eventedit');
+    onClose();
   };
 
-  const handleDelete = async () => {
-    if (!event?.id) return;
+  const formatDisplayTime = () => {
     try {
-      setIsDeleting(true);
-      await onDelete(event.id);
-    } finally {
-      setIsDeleting(false);
+      const start = new Date(startTime);
+      return `${format(start, 'EEEE, d MMMM')} – ${format(start, 'EEEE, d MMMM')}`;
+    } catch {
+      return 'Invalid Date';
     }
   };
 
@@ -237,241 +133,192 @@ const EventModal: React.FC<EventModalProps> = ({
         exit: { opacity: 0, scale: 0.95, y: -20 },
         transition: { duration: 0.2, ease: 'easeOut' },
         sx: {
-          borderRadius: '16px',
-          overflow: 'hidden',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+          borderRadius: '8px',
+          boxShadow: '0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2)',
+          m: 2,
         },
       }}
     >
-      {/* Color accent bar */}
-      <Box sx={{ height: 4, background: color }} />
-
-      <DialogTitle sx={{ pr: 6, pb: 1, pt: 2 }}>
-        <Typography variant="h6" fontWeight={600} color="#202124">
-          {isEditing ? 'Edit Event' : 'New Event'}
-        </Typography>
-        <IconButton
-          onClick={onClose}
-          size="small"
-          sx={{ position: 'absolute', right: 12, top: 12, color: '#5f6368' }}
-        >
-          <CloseIcon />
+      {/* Minimal Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#f1f3f4', px: 1, py: 0.5 }}>
+        <IconButton size="small" sx={{ color: '#5f6368', cursor: 'grab' }}>
+          <DragHandleIcon fontSize="small" />
         </IconButton>
-      </DialogTitle>
+        <IconButton size="small" onClick={onClose} sx={{ color: '#5f6368' }}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
 
-      <DialogContent sx={{ pt: 1 }}>
-        {/* Title */}
-        <TextField
-          id="event-title"
-          label="Title"
-          fullWidth
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          error={Boolean(errors.title)}
-          helperText={errors.title}
-          sx={{ mb: 2 }}
-          autoFocus
-          placeholder="Add title"
-          variant="outlined"
-        />
-
-        {/* All Day Toggle */}
-        <FormControlLabel
-          control={
-            <Switch
-              checked={allDay}
-              onChange={(e) => setAllDay(e.target.checked)}
-              color="primary"
-            />
-          }
-          label="All day"
-          sx={{ mb: 1, ml: 0 }}
-        />
-
-        {/* Times */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flex: 1, minWidth: 200 }}>
-            <ScheduleIcon sx={{ color: '#5f6368', mt: 2 }} />
-            <TextField
-              id="event-start-time"
-              label="Start"
-              type={allDay ? 'date' : 'datetime-local'}
-              fullWidth
-              value={allDay ? startTime.split('T')[0] : startTime}
-              onChange={(e) => setStartTime(allDay ? e.target.value + 'T00:00' : e.target.value)}
-              error={Boolean(errors.startTime)}
-              helperText={errors.startTime}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flex: 1, minWidth: 200 }}>
-            <Box sx={{ width: 24 }} />
-            <TextField
-              id="event-end-time"
-              label="End"
-              type={allDay ? 'date' : 'datetime-local'}
-              fullWidth
-              value={allDay ? endTime.split('T')[0] : endTime}
-              onChange={(e) => setEndTime(allDay ? e.target.value + 'T23:59' : e.target.value)}
-              error={Boolean(errors.endTime)}
-              helperText={errors.endTime}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Box>
-        </Box>
-
-        {/* Location */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <LocationIcon sx={{ color: '#5f6368' }} />
+      <DialogContent sx={{ px: 3, pt: 2, pb: 1, overflowY: 'visible' }}>
+        {/* Title Input */}
+        <Box sx={{ pl: 5, mb: 1.5 }}>
           <TextField
-            id="event-location"
-            label="Location"
             fullWidth
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Add location"
-            size="small"
+            variant="standard"
+            placeholder="Add title and time"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            autoFocus
+            InputProps={{
+              disableUnderline: false,
+              sx: {
+                fontSize: '1.375rem',
+                color: '#3c4043',
+                '&::before': { borderBottom: '2px solid #1a73e8 !important' },
+                '&::after': { borderBottom: '2px solid #1a73e8 !important' },
+              }
+            }}
           />
         </Box>
 
-        {/* Description */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
-          <NotesIcon sx={{ color: '#5f6368', mt: 1 }} />
-          <TextField
-            id="event-description"
-            label="Description"
-            fullWidth
-            multiline
-            rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add description"
-            size="small"
-          />
-        </Box>
-
-        {/* Recurrence */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <RepeatIcon sx={{ color: '#5f6368' }} />
-          <FormControl fullWidth size="small">
-            <InputLabel id="recurrence-label">Repeat</InputLabel>
-            <Select
-              labelId="recurrence-label"
-              id="event-recurrence"
-              value={recurrence}
-              label="Repeat"
-              onChange={(e) => setRecurrence(e.target.value as any)}
-            >
-              <MenuItem value="none">Does not repeat</MenuItem>
-              <MenuItem value="daily">Every day</MenuItem>
-              <MenuItem value="weekly">Every week</MenuItem>
-              <MenuItem value="monthly">Every month</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Color Picker */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <PaletteIcon sx={{ color: '#5f6368' }} />
-          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-            {EVENT_COLORS.map((c) => (
-              <Tooltip key={c.value} title={c.label} arrow>
-                <Box
-                  onClick={() => setColor(c.value)}
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    backgroundColor: c.value,
-                    cursor: 'pointer',
-                    border: color === c.value ? '2px solid #202124' : '2px solid transparent',
-                    outline: color === c.value ? `2px solid ${c.value}` : 'none',
-                    outlineOffset: 2,
-                    transition: 'transform 0.15s',
-                    '&:hover': { transform: 'scale(1.2)' },
-                  }}
-                />
-              </Tooltip>
-            ))}
-          </Box>
-        </Box>
-
-        {/* Overlap Warning */}
-        <AnimatePresence>
-          {overlappingEvents.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <Alert
-                severity="warning"
-                icon={<WarningIcon />}
-                sx={{ mb: 2, borderRadius: '8px' }}
-                action={
-                  <Button
-                    size="small"
-                    color="warning"
-                    variant="contained"
-                    onClick={handleSaveAnyway}
-                    disabled={isSaving}
-                    sx={{ whiteSpace: 'nowrap' }}
-                  >
-                    {isSaving ? <CircularProgress size={16} /> : 'Save anyway'}
-                  </Button>
-                }
-              >
-                <Typography variant="body2" fontWeight={600}>
-                  Time conflict detected!
-                </Typography>
-                <Typography variant="caption">
-                  Overlaps with:{' '}
-                  {overlappingEvents.map((e) => (
-                    <Chip key={e.id} label={e.title} size="small" sx={{ ml: 0.5, height: 18, fontSize: '0.7rem' }} />
-                  ))}
-                </Typography>
-              </Alert>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </DialogContent>
-
-      <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
-        {isEditing && (
-          <IconButton
-            onClick={handleDelete}
-            disabled={isDeleting}
-            color="error"
-            sx={{ mr: 'auto' }}
-            title="Delete event"
-          >
-            {isDeleting ? <CircularProgress size={20} /> : <DeleteIcon />}
-          </IconButton>
-        )}
-        <Button onClick={onClose} disabled={isSaving} sx={{ color: '#5f6368' }}>
-          Cancel
-        </Button>
-        {checkingOverlap ? (
-          <Button variant="contained" disabled>
-            <CircularProgress size={20} color="inherit" />
-          </Button>
-        ) : (
+        {/* Tabs: Event / Task */}
+        <Box sx={{ pl: 5, mb: 3, display: 'flex', gap: 1 }}>
           <Button
-            id="event-save-btn"
-            variant="contained"
-            onClick={handleSave}
-            disabled={isSaving}
+            size="small"
+            onClick={() => setActiveTab('event')}
             sx={{
-              background: `linear-gradient(90deg, ${color}, ${color}dd)`,
-              fontWeight: 600,
-              borderRadius: '8px',
-              px: 3,
-              '&:hover': { filter: 'brightness(0.9)' },
+              textTransform: 'none',
+              backgroundColor: activeTab === 'event' ? '#e8f0fe' : 'transparent',
+              color: activeTab === 'event' ? '#1a73e8' : '#3c4043',
+              borderRadius: '4px',
+              fontWeight: 500,
+              px: 2,
+              '&:hover': { backgroundColor: activeTab === 'event' ? '#e8f0fe' : '#f1f3f4' }
             }}
           >
-            {isSaving ? <CircularProgress size={20} color="inherit" /> : isEditing ? 'Update' : 'Save'}
+            Event
           </Button>
-        )}
+          <Button
+            size="small"
+            onClick={() => setActiveTab('task')}
+            sx={{
+              textTransform: 'none',
+              backgroundColor: activeTab === 'task' ? '#e8f0fe' : 'transparent',
+              color: activeTab === 'task' ? '#1a73e8' : '#3c4043',
+              borderRadius: '4px',
+              fontWeight: 500,
+              px: 2,
+              '&:hover': { backgroundColor: activeTab === 'task' ? '#e8f0fe' : '#f1f3f4' }
+            }}
+          >
+            Task
+          </Button>
+        </Box>
+
+        {/* Details Rows */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          
+          {/* Time row */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+            <ScheduleIcon sx={{ color: '#5f6368', mt: 0.5 }} />
+            <Box sx={{ flexGrow: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography sx={{ color: '#3c4043', fontSize: '0.875rem' }}>
+                  {formatDisplayTime()}
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  size="small"
+                  sx={{ 
+                    borderRadius: '20px', 
+                    textTransform: 'none', 
+                    color: '#1a73e8', 
+                    borderColor: '#dadce0',
+                    px: 2,
+                    py: 0,
+                    height: 24,
+                  }}
+                >
+                  Add time
+                </Button>
+              </Box>
+              <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>
+                Doesn't repeat
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Add guests */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <PeopleIcon sx={{ color: '#5f6368' }} />
+            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>
+              Add guests
+            </Typography>
+          </Box>
+
+          {/* Add Google Meet */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <VideocamIcon sx={{ color: '#fbbc04' }} />
+            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>
+              Add Google Meet video conferencing
+            </Typography>
+          </Box>
+
+          {/* Add Location */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <LocationIcon sx={{ color: '#5f6368' }} />
+            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>
+              Add location
+            </Typography>
+          </Box>
+
+          {/* Add description */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <NotesIcon sx={{ color: '#5f6368' }} />
+            <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>
+              Add description or a Google Drive attachment
+            </Typography>
+          </Box>
+
+          {/* Calendar Select */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+            <CalendarIcon sx={{ color: '#5f6368', mt: 0.5 }} />
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Aryan Diggal
+                </Typography>
+                <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} />
+              </Box>
+              <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>
+                Free · Default visibility · Notify the day before at 5pm
+              </Typography>
+            </Box>
+          </Box>
+
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, pb: 2, pt: 1, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+        <Button 
+          onClick={handleMoreOptions} 
+          sx={{ 
+            textTransform: 'none', 
+            fontWeight: 500, 
+            color: '#1a73e8',
+            '&:hover': { backgroundColor: '#f1f3f4' },
+            mr: 'auto',
+          }}
+        >
+          More options
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={isSaving}
+          sx={{
+            backgroundColor: '#1a73e8',
+            color: '#fff',
+            textTransform: 'none',
+            borderRadius: '20px',
+            px: 3,
+            fontWeight: 500,
+            boxShadow: 'none',
+            '&:hover': { backgroundColor: '#1557b0', boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3)' },
+          }}
+        >
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );
