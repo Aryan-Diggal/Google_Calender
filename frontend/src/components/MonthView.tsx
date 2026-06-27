@@ -20,7 +20,7 @@ interface MonthViewProps {
   currentDate: Date;
   events: Event[];
   onEventClick: (event: Event) => void;
-  onCreateEvent: (startTime?: Date) => void;
+  onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
@@ -112,7 +112,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                   }}
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('.event-pill')) return;
-                    onCreateEvent(day);
+                    onCreateEvent(day, e.currentTarget);
                   }}
                 >
                   {/* Day number */}

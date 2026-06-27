@@ -68,6 +68,8 @@ function CalendarApp() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [defaultStartTime, setDefaultStartTime] = useState<Date | null>(null);
 
+  const [draftEvent, setDraftEvent] = useState<Partial<Event> | null>(null);
+
   useEffect(() => { loadEvents(); }, []);
 
   const loadEvents = async () => {
@@ -105,15 +107,17 @@ function CalendarApp() {
     return format(selectedDate, 'EEEE, MMMM d, yyyy');
   };
 
-  const handleCreateEvent = (startTime?: Date) => {
+  const handleCreateEvent = (startTime?: Date, anchor?: HTMLElement) => {
     setSelectedEvent(null);
     setDefaultStartTime(startTime || null);
+    setAnchorEl(anchor || null);
     setIsEventModalOpen(true);
   };
 
-  const handleEditEvent = (event: Event) => {
+  const handleEditEvent = (event: Event, anchor?: HTMLElement) => {
     setSelectedEvent(event);
     setDefaultStartTime(null);
+    setAnchorEl(anchor || null);
     setIsEventModalOpen(true);
   };
 
@@ -562,11 +566,13 @@ function CalendarApp() {
 
       <EventModal
         open={isEventModalOpen}
-        onClose={() => { setIsEventModalOpen(false); setSelectedEvent(null); }}
+        anchorEl={anchorEl}
+        onClose={() => { setIsEventModalOpen(false); setSelectedEvent(null); setAnchorEl(null); setDraftEvent(null); }}
         onSave={handleSaveEvent}
         onDelete={handleDeleteEvent}
         event={selectedEvent}
         defaultStartTime={defaultStartTime}
+        onChange={(draft) => setDraftEvent(draft)}
       />
     </Box>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Dialog, DialogContent, DialogActions,
+  Popover, DialogContent, DialogActions,
   TextField, Button, Box, IconButton, Typography, Checkbox, FormControlLabel, Select, MenuItem, Alert, CircularProgress,
 } from '@mui/material';
 import {
@@ -16,18 +16,20 @@ import {
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, addHours, isSameDay, addMinutes, differenceInMinutes, parse, startOfDay, addDays } from 'date-fns';
+import { format, addHours, isSameDay, addMinutes, differenceInMinutes, parse, startOfDay } from 'date-fns';
 import { Event } from '../types/Event';
 import { eventService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 interface EventModalProps {
   open: boolean;
+  anchorEl?: HTMLElement | null;
   onClose: () => void;
   onSave: (event: Event) => Promise<void>;
   onDelete: (eventId: number) => Promise<void>;
   event: Event | null;
   defaultStartTime?: Date | null;
+  onChange?: (draft: Partial<Event>) => void;
 }
 
 const generateStartTimeOptions = () => {
@@ -61,7 +63,7 @@ const getCombinedDate = (date: Date, time: Date, isAllDay: boolean = false) => {
 };
 
 const EventModal: React.FC<EventModalProps> = ({
-  open, onClose, onSave, onDelete, event, defaultStartTime,
+  open, anchorEl, onClose, onSave, onDelete, event, defaultStartTime, onChange
 }) => {
   const navigate = useNavigate();
 
@@ -162,6 +164,24 @@ const EventModal: React.FC<EventModalProps> = ({
     setOverlappingEvents([]);
   }, [startDate, endDate, startTime, endTime, allDay]);
 
+  useEffect(() => {
+    if (open && onChange && !event) {
+      const start = getCombinedDate(startDate, startTime, allDay);
+      let end = getCombinedDate(endDate, endTime, allDay);
+      if (allDay) {
+        end = addHours(startOfDay(endDate), 23); 
+      }
+      onChange({
+        id: -1,
+        title: title || '(No title)',
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        color,
+        allDay,
+      });
+    }
+  }, [title, startDate, startTime, endDate, endTime, allDay, color, open]);
+
   const handleStartTimeChange = (newTimeString: string) => {
     const newTime = parse(newTimeString, 'h:mma', new Date());
     setStartTime(newTime);
@@ -194,8 +214,6 @@ const EventModal: React.FC<EventModalProps> = ({
   };
 
   const handleSave = async (forceSave = false) => {
-    if (!title.trim()) return;
-
     const start = getCombinedDate(startDate, startTime, allDay);
     let end = getCombinedDate(endDate, endTime, allDay);
     
@@ -211,7 +229,7 @@ const EventModal: React.FC<EventModalProps> = ({
     try {
       setIsSaving(true);
       const eventData: Event = {
-        title: title.trim(),
+        title: title.trim() || '(No title)',
         description: description.trim() || undefined,
         startTime: start.toISOString(),
         endTime: end.toISOString(),
@@ -234,11 +252,18 @@ const EventModal: React.FC<EventModalProps> = ({
   const currentEndObj = getCombinedDate(endDate, endTime);
 
   return (
-    <Dialog
+    <Popover
       open={open}
+      anchorEl={anchorEl}
       onClose={onClose}
-      maxWidth="md"
-      hideBackdrop={true}
+      anchorOrigin={{
+        vertical: 'center',
+        horizontal: 'right',
+      }}
+      transformOrigin={{
+        vertical: 'center',
+        horizontal: 'left',
+      }}
       disableScrollLock={true}
       PaperProps={{
         component: motion.div,
@@ -249,7 +274,7 @@ const EventModal: React.FC<EventModalProps> = ({
         sx: { 
           borderRadius: '24px', 
           boxShadow: '0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2)', 
-          m: 2, 
+          m: 1, 
           width: 'auto',
           minWidth: '448px'
         },
@@ -373,7 +398,7 @@ const EventModal: React.FC<EventModalProps> = ({
           {isSaving || checkingOverlap ? <CircularProgress size={20} color="inherit" /> : 'Save'}
         </Button>
       </DialogActions>
-    </Dialog>
+    </Popover>
   );
 };
 
