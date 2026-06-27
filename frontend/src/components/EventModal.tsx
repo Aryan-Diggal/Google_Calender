@@ -113,7 +113,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
   const [activeTab, setActiveTab] = useState<'event' | 'task'>('event');
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advancedAnchorEl, setAdvancedAnchorEl] = useState<null | HTMLElement>(null);
   const [colorAnchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
   const [calendarAnchorEl, setCalendarAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -379,16 +379,23 @@ const EventModal: React.FC<EventModalProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><VideocamIcon sx={{ color: '#fbbc04' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add Google Meet video conferencing</Typography></Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><LocationIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add location</Typography></Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><NotesIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add description or a Google Drive attachment</Typography></Box>
-          {!showAdvanced ? (
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }} onClick={() => setShowAdvanced(true)}>
-              <CalendarIcon sx={{ color: '#5f6368', mt: 0.5 }} />
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>Aryan Diggal</Typography><Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} /></Box>
-                <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>Free · Default visibility · Notify the day before at 5pm</Typography>
-              </Box>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }} onClick={(e) => setAdvancedAnchorEl(e.currentTarget)}>
+            <CalendarIcon sx={{ color: '#5f6368', mt: 0.5 }} />
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>Aryan Diggal</Typography><Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} /></Box>
+              <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>Free · Default visibility · Notify the day before at 5pm</Typography>
             </Box>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, ml: -1, mt: 1, pl: 1 }}>
+          </Box>
+
+          <Popover
+            open={Boolean(advancedAnchorEl)}
+            anchorEl={advancedAnchorEl}
+            onClose={() => setAdvancedAnchorEl(null)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            PaperProps={{ sx: { p: 2, width: 320, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08)' } }}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {/* Calendar and Color */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <CalendarIcon sx={{ color: '#5f6368' }} />
@@ -436,7 +443,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 </Box>
               </Box>
             </Box>
-          )}
+          </Popover>
 
           {/* Menus for dropdowns */}
           <Menu anchorEl={colorAnchorEl} open={Boolean(colorAnchorEl)} onClose={() => setColorAnchorEl(null)} PaperProps={{ sx: { p: 1, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' } }}>
