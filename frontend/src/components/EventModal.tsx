@@ -103,9 +103,10 @@ const EventModal: React.FC<EventModalProps> = ({
   const [endTime, setEndTime] = useState<Date>(getDefaultEnd());
   const [location, setLocation] = useState('');
   const [color, setColor] = useState('#1a73e8');
-  const [allDay, setAllDay] = useState(false);
+  const isMonthViewClick = defaultStartTime ? (defaultStartTime.getHours() === 0 && defaultStartTime.getMinutes() === 0) : false;
+  const [allDay, setAllDay] = useState(isMonthViewClick);
+  const [showTimeInputs, setShowTimeInputs] = useState(!isMonthViewClick);
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
-  
   const [isSaving, setIsSaving] = useState(false);
   const [checkingOverlap, setCheckingOverlap] = useState(false);
   const [overlappingEvents, setOverlappingEvents] = useState<Event[]>([]);
@@ -240,6 +241,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
     try {
       setIsSaving(true);
+      const finalAllDay = showTimeInputs ? allDay : true;
       const eventData: Event = {
         title: title.trim() || '(No title)',
         description: description.trim() || undefined,
@@ -247,7 +249,7 @@ const EventModal: React.FC<EventModalProps> = ({
         endTime: end.toISOString(),
         location: location.trim() || undefined,
         color,
-        allDay,
+        allDay: finalAllDay,
         recurrence,
       };
       await onSave(eventData);
@@ -320,67 +322,91 @@ const EventModal: React.FC<EventModalProps> = ({
             <ScheduleIcon sx={{ color: '#5f6368', mt: 1 }} />
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
               
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', width: 'max-content' }}>
-                <DatePicker 
-                  value={startDate} 
-                  onChange={(val) => { if(val) setStartDate(val); }} 
-                  format="EEEE, d MMMM" 
-                  slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} 
-                />
-                
-                {!allDay && (
-                  <>
-                    <Select 
-                      value={formatTime(startTime)} 
-                      onChange={(e) => handleStartTimeChange(e.target.value)} 
-                      variant="standard" disableUnderline 
-                      sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
-                    >
-                      {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
+              {!showTimeInputs ? (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.875rem', color: '#3c4043', pt: 0.5 }}>
+                      {format(startDate, 'EEEE, d MMMM')} – {format(endDate, 'EEEE, d MMMM')}
+                    </Typography>
+                    <Select value={recurrence} onChange={(e) => setRecurrence(e.target.value as any)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', color: '#5f6368', height: 24, '& .MuiSelect-select': { py: 0, pl: 0 } }}>
+                      <MenuItem value="none" sx={{ fontSize: '0.875rem' }}>Doesn't repeat</MenuItem>
+                      <MenuItem value="daily" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
+                      <MenuItem value="weekly" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
                     </Select>
+                  </Box>
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => { setShowTimeInputs(true); setAllDay(false); }}
+                    sx={{ borderRadius: '24px', textTransform: 'none', color: '#1a73e8', borderColor: '#dadce0', px: 2, py: 0.25 }}
+                  >
+                    Add time
+                  </Button>
+                </Box>
+              ) : (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', width: 'max-content' }}>
+                    <DatePicker 
+                      value={startDate} 
+                      onChange={(val) => { if(val) setStartDate(val); }} 
+                      format="EEEE, d MMMM" 
+                      slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} 
+                    />
                     
-                    <Typography sx={{ color: '#5f6368', mx: 0.2 }}>–</Typography>
-                    
-                    <Select 
-                      value={currentEndObj.toISOString()} 
-                      onChange={(e) => handleEndTimeChange(e.target.value)} 
-                      renderValue={(val) => formatTime(new Date(val))}
-                      variant="standard" disableUnderline 
-                      sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
-                    >
-                      {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
-                    </Select>
+                    {!allDay && (
+                      <>
+                        <Select 
+                          value={formatTime(startTime)} 
+                          onChange={(e) => handleStartTimeChange(e.target.value)} 
+                          variant="standard" disableUnderline 
+                          sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
+                        >
+                          {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
+                        </Select>
+                        
+                        <Typography sx={{ color: '#5f6368', mx: 0.2 }}>–</Typography>
+                        
+                        <Select 
+                          value={currentEndObj.toISOString()} 
+                          onChange={(e) => handleEndTimeChange(e.target.value)} 
+                          renderValue={(val) => formatTime(new Date(val))}
+                          variant="standard" disableUnderline 
+                          sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
+                        >
+                          {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
+                        </Select>
 
-                    {!isSameDay(startDate, endDate) && (
-                      <DatePicker 
-                        value={endDate} 
-                        onChange={(val) => { if(val) setEndDate(val); }} 
-                        format="EEEE, d MMMM" 
-                        slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} 
-                      />
+                        {!isSameDay(startDate, endDate) && (
+                          <DatePicker 
+                            value={endDate} 
+                            onChange={(val) => { if(val) setEndDate(val); }} 
+                            format="EEEE, d MMMM" 
+                            slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} 
+                          />
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-                {allDay && (
-                  <>
-                    <Typography sx={{ color: '#5f6368', mx: 0.5 }}>–</Typography>
-                    <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
-                  </>
-                )}
-              </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <FormControlLabel control={<Checkbox size="small" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} sx={{ py: 0 }} />} label={<Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>All day</Typography>} />
-              </Box>
-              
-              <Box>
-                <Select value={recurrence} onChange={(e) => setRecurrence(e.target.value as any)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}>
-                  <MenuItem value="none" sx={{ fontSize: '0.875rem' }}>Does not repeat</MenuItem>
-                  <MenuItem value="daily" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
-                  <MenuItem value="weekly" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
-                  <MenuItem value="monthly" sx={{ fontSize: '0.875rem' }}>Monthly on the {Math.ceil(startDate.getDate()/7)} {format(startDate, 'EEEE')}</MenuItem>
-                </Select>
-              </Box>
+                    {allDay && (
+                      <>
+                        <Typography sx={{ color: '#5f6368', mx: 0.5 }}>–</Typography>
+                        <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
+                      </>
+                    )}
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <FormControlLabel control={<Checkbox size="small" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} sx={{ py: 0 }} />} label={<Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>All day</Typography>} />
+                  </Box>
+                  
+                  <Box>
+                    <Select value={recurrence} onChange={(e) => setRecurrence(e.target.value as any)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}>
+                      <MenuItem value="none" sx={{ fontSize: '0.875rem' }}>Does not repeat</MenuItem>
+                      <MenuItem value="daily" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
+                      <MenuItem value="weekly" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
+                      <MenuItem value="monthly" sx={{ fontSize: '0.875rem' }}>Monthly on the {Math.ceil(startDate.getDate()/7)} {format(startDate, 'EEEE')}</MenuItem>
+                    </Select>
+                  </Box>
+                </>
+              )}
             </Box>
           </Box>
 
