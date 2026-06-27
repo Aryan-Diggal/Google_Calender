@@ -19,7 +19,7 @@ import { useDndMonitor } from '@dnd-kit/core';
 interface MonthViewProps {
   currentDate: Date;
   events: Event[];
-  onEventClick: (event: Event) => void;
+  onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
@@ -156,7 +156,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                       transition={{ duration: 0.15 }}
                     >
                       <Box
-                        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
+                        onClick={(e) => { e.stopPropagation(); onEventClick(event, e.currentTarget); }}
                         sx={{
                           backgroundColor: event.color || '#1a73e8',
                           color: 'white',
@@ -238,7 +238,7 @@ const MonthView: React.FC<MonthViewProps> = ({
             {moreAnchor.events.map((event) => (
               <Box
                 key={event.id}
-                onClick={() => { onEventClick(event); setMoreAnchor(null); }}
+                onClick={(e: React.MouseEvent) => { onEventClick(event, e.currentTarget as HTMLElement); setMoreAnchor(null); }}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',

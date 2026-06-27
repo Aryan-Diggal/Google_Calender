@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 interface WeekViewProps {
   currentDate: Date;
   events: Event[];
-  onEventClick: (event: Event) => void;
+  onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
@@ -110,7 +110,7 @@ const WeekView: React.FC<WeekViewProps> = ({
               {allDayEvents.map((event) => (
                 <Box
                   key={event.id}
-                  onClick={() => onEventClick(event)}
+                  onClick={(e) => { e.stopPropagation(); onEventClick(event, e.currentTarget); }}
                   sx={{
                     backgroundColor: event.color || '#1a73e8',
                     color: 'white',
@@ -239,7 +239,7 @@ const WeekView: React.FC<WeekViewProps> = ({
                       arrow
                     >
                       <Box
-                        onClick={(e) => { e.stopPropagation(); onEventClick(pe); }}
+                        onClick={(e) => { e.stopPropagation(); onEventClick(pe, e.currentTarget); }}
                         sx={{
                           height: '100%',
                           backgroundColor: pe.color || '#1a73e8',

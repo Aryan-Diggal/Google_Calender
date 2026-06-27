@@ -20,7 +20,7 @@ interface CalendarProps {
   selectedDate: Date;
   onViewChange: (view: CalendarView) => void;
   onDateChange: (date: Date) => void;
-  onEventClick: (event: Event) => void;
+  onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
   loading: boolean;
