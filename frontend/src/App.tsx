@@ -14,6 +14,8 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   ArrowDropDown as ArrowDropDownIcon,
+  CalendarToday as CalendarIcon,
+  TaskAlt as TaskIcon,
 } from '@mui/icons-material';
 import {
   format,
@@ -307,8 +309,53 @@ function CalendarApp() {
             </IconButton>
           </Tooltip>
 
-          <Box sx={{ ml: 2, mr: 1 }}>
+          <Box sx={{ ml: 2, mr: 2 }}>
             <ViewDropdown currentView={currentView} onViewChange={setCurrentView} />
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              border: '1px solid #dadce0',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              mr: 2,
+              height: 34,
+            }}
+          >
+            <Tooltip title="Calendar">
+              <Box
+                sx={{
+                  backgroundColor: '#c2e7ff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 48,
+                  height: '100%',
+                  cursor: 'pointer',
+                }}
+              >
+                <CalendarIcon sx={{ fontSize: 20, color: '#001d35' }} />
+              </Box>
+            </Tooltip>
+            <Divider orientation="vertical" flexItem sx={{ borderColor: '#dadce0', margin: 0 }} />
+            <Tooltip title="Tasks">
+              <Box
+                sx={{
+                  backgroundColor: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 48,
+                  height: '100%',
+                  cursor: 'pointer',
+                  '&:hover': { backgroundColor: '#f1f3f4' }
+                }}
+              >
+                <TaskIcon sx={{ fontSize: 20, color: '#444746' }} />
+              </Box>
+            </Tooltip>
           </Box>
 
           <Tooltip title="Google apps">
@@ -550,7 +597,7 @@ const ViewDropdown: React.FC<{
           textTransform: 'none',
           color: '#3c4043',
           borderColor: '#dadce0',
-          borderRadius: '4px',
+          borderRadius: '20px',
           fontWeight: 500,
           fontSize: '0.875rem',
           px: 2,
