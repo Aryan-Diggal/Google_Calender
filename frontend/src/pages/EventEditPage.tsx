@@ -374,7 +374,6 @@ const EventEditPage: React.FC = () => {
                 <Box
                   contentEditable
                   onInput={(e) => setDescription(e.currentTarget.innerHTML)}
-                  dangerouslySetInnerHTML={{ __html: description }}
                   suppressContentEditableWarning
                   sx={{
                     flexGrow: 1,
