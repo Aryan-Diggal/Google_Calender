@@ -32,6 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSnackbar } from 'notistack';
 import Calendar from './components/Calendar';
 import EventModal from './components/EventModal';
+import EventViewModal from './components/EventViewModal';
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -62,6 +63,7 @@ function CalendarApp() {
   const [currentView, setCurrentView] = useState<CalendarView>('month');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isEventViewModalOpen, setIsEventViewModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -119,7 +121,7 @@ function CalendarApp() {
     setSelectedEvent(event);
     setDefaultStartTime(null);
     setEventAnchorEl(anchor || null);
-    setIsEventModalOpen(true);
+    setIsEventViewModalOpen(true);
   };
 
   const handleSaveEvent = async (eventData: Event) => {
@@ -147,6 +149,7 @@ function CalendarApp() {
       enqueueSnackbar('Event deleted', { variant: 'info' });
       await loadEvents();
       setIsEventModalOpen(false);
+      setIsEventViewModalOpen(false);
       setSelectedEvent(null);
       setEventAnchorEl(null);
       setDraftEvent(null);
@@ -578,6 +581,14 @@ function CalendarApp() {
         event={selectedEvent}
         defaultStartTime={defaultStartTime}
         onChange={(draft) => setDraftEvent(draft)}
+      />
+
+      <EventViewModal
+        open={isEventViewModalOpen}
+        anchorEl={eventAnchorEl}
+        onClose={() => { setIsEventViewModalOpen(false); setSelectedEvent(null); setEventAnchorEl(null); }}
+        event={selectedEvent}
+        onDelete={handleDeleteEvent}
       />
     </Box>
   );
