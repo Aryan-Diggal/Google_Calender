@@ -420,7 +420,7 @@ function CalendarApp() {
         </AnimatePresence>
 
         {/* Main calendar area */}
-        <Box sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', px: 2, pb: 2 }}>
+        <Box sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', pr: 2, pl: sidebarOpen ? 2 : 10, pb: 2 }}>
           <Box
             sx={{
               flexGrow: 1,
