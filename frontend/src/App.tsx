@@ -134,6 +134,8 @@ function CalendarApp() {
       await loadEvents();
       setIsEventModalOpen(false);
       setSelectedEvent(null);
+      setEventAnchorEl(null);
+      setDraftEvent(null);
     } catch (err: any) {
       enqueueSnackbar(err?.response?.data?.error || 'Failed to save event', { variant: 'error' });
     }
@@ -146,6 +148,8 @@ function CalendarApp() {
       await loadEvents();
       setIsEventModalOpen(false);
       setSelectedEvent(null);
+      setEventAnchorEl(null);
+      setDraftEvent(null);
     } catch {
       enqueueSnackbar('Failed to delete event', { variant: 'error' });
     }
