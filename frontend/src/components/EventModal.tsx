@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Popover, DialogContent, DialogActions,
-  TextField, Button, Box, IconButton, Typography, Checkbox, FormControlLabel, Select, MenuItem, Alert, CircularProgress,
+  TextField, Button, Box, IconButton, Typography, Checkbox, FormControlLabel, Select, MenuItem, Alert, CircularProgress, Menu,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -13,6 +13,11 @@ import {
   Notes as NotesIcon,
   CalendarToday as CalendarIcon,
   Warning as WarningIcon,
+  BusinessCenterOutlined as SuitcaseIcon,
+  LockOutlined as LockIcon,
+  NotificationsOutlined as NotificationIcon,
+  ArrowDropDown as ArrowDropDownIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -107,6 +112,12 @@ const EventModal: React.FC<EventModalProps> = ({
   const [overlapChecked, setOverlapChecked] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'event' | 'task'>('event');
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [colorAnchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
+  const [calendarAnchorEl, setCalendarAnchorEl] = useState<null | HTMLElement>(null);
+
+  const GOOGLE_COLORS = ['#d50000', '#e67c73', '#f4511e', '#f6bf26', '#33b679', '#0b8043', '#039be5', '#3f51b5', '#7986cb', '#8e24aa', '#616161'];
 
   const startTimeOptions = useMemo(() => generateStartTimeOptions(), []);
 
@@ -368,13 +379,80 @@ const EventModal: React.FC<EventModalProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><VideocamIcon sx={{ color: '#fbbc04' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add Google Meet video conferencing</Typography></Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><LocationIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add location</Typography></Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><NotesIcon sx={{ color: '#5f6368' }} /><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }}>Add description or a Google Drive attachment</Typography></Box>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-            <CalendarIcon sx={{ color: '#5f6368', mt: 0.5 }} />
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>Aryan Diggal</Typography><Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} /></Box>
-              <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>Free · Default visibility · Notify the day before at 5pm</Typography>
+          {!showAdvanced ? (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }} onClick={() => setShowAdvanced(true)}>
+              <CalendarIcon sx={{ color: '#5f6368', mt: 0.5 }} />
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>Aryan Diggal</Typography><Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} /></Box>
+                <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>Free · Default visibility · Notify the day before at 5pm</Typography>
+              </Box>
             </Box>
-          </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, ml: -1, mt: 1, pl: 1 }}>
+              {/* Calendar and Color */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <CalendarIcon sx={{ color: '#5f6368' }} />
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Box onClick={(e) => setCalendarAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f1f3f4', px: 1.5, py: 0.75, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } }}>
+                    <Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>Aryan Diggal</Typography>
+                    <ArrowDropDownIcon sx={{ color: '#5f6368' }} />
+                  </Box>
+                  <Box onClick={(e) => setColorAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f1f3f4', px: 1.5, py: 0.75, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } }}>
+                    <Box sx={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: color }} />
+                    <ArrowDropDownIcon sx={{ color: '#5f6368' }} />
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Busy/Free */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <SuitcaseIcon sx={{ color: '#5f6368' }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f1f3f4', px: 1.5, py: 0.75, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, width: 'max-content' }}>
+                  <Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>Free</Typography>
+                  <ArrowDropDownIcon sx={{ color: '#5f6368' }} />
+                </Box>
+              </Box>
+
+              {/* Visibility */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <LockIcon sx={{ color: '#5f6368' }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f1f3f4', px: 1.5, py: 0.75, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, width: 'max-content' }}>
+                  <Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>Default visibility</Typography>
+                  <ArrowDropDownIcon sx={{ color: '#5f6368' }} />
+                </Box>
+              </Box>
+
+              {/* Notifications */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <NotificationIcon sx={{ color: '#5f6368' }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f1f3f4', px: 1.5, py: 0.75, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, width: 'max-content' }}>
+                    <Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>The day before at 5pm</Typography>
+                    <ArrowDropDownIcon sx={{ color: '#5f6368' }} />
+                  </Box>
+                  <Typography sx={{ fontSize: '0.875rem', color: '#1a73e8', fontWeight: 500, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+                    Add notification
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          )}
+
+          {/* Menus for dropdowns */}
+          <Menu anchorEl={colorAnchorEl} open={Boolean(colorAnchorEl)} onClose={() => setColorAnchorEl(null)} PaperProps={{ sx: { p: 1, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' } }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
+              {GOOGLE_COLORS.map(c => (
+                <Box key={c} onClick={() => { setColor(c); setColorAnchorEl(null); }} sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: c, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', '&:hover': { transform: 'scale(1.1)' }, transition: 'transform 0.1s' }}>
+                  {color === c && <CheckIcon sx={{ color: '#fff', fontSize: 16 }} />}
+                </Box>
+              ))}
+            </Box>
+          </Menu>
+
+          <Menu anchorEl={calendarAnchorEl} open={Boolean(calendarAnchorEl)} onClose={() => setCalendarAnchorEl(null)} PaperProps={{ sx: { width: 220, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' } }}>
+            <MenuItem onClick={() => setCalendarAnchorEl(null)} sx={{ fontSize: '0.875rem', py: 1 }}>Aryan Diggal</MenuItem>
+            <MenuItem onClick={() => setCalendarAnchorEl(null)} sx={{ fontSize: '0.875rem', py: 1 }}>Assignments Now</MenuItem>
+          </Menu>
           
           <AnimatePresence>
             {overlappingEvents.length > 0 && (
