@@ -152,7 +152,10 @@ const EventEditPage: React.FC = () => {
     if (allDay) end = addHours(startOfDay(endDate), 23);
 
     if (!forceSave) {
-      const overlaps = await eventService.getOverlappingEvents(start.toISOString(), end.toISOString());
+      let overlaps = await eventService.getOverlappingEvents(start.toISOString(), end.toISOString());
+      if (id) {
+        overlaps = overlaps.filter(o => o.id !== Number(id));
+      }
       if (overlaps.length > 0) {
         if (!window.confirm(`Time conflict detected! Overlaps with ${overlaps.map(o => o.title).join(', ')}. Save anyway?`)) {
           return;
