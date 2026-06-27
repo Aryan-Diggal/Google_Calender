@@ -496,7 +496,7 @@ function CalendarApp() {
                 style={{ height: '100%' }}
               >
                 <Calendar
-                  events={events}
+                  events={draftEvent ? [...events, draftEvent as Event] : events}
                   currentView={currentView}
                   selectedDate={selectedDate}
                   onViewChange={setCurrentView}

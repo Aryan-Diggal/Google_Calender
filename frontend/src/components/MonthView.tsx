@@ -170,6 +170,9 @@ const MonthView: React.FC<MonthViewProps> = ({
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                           cursor: 'pointer',
+                          boxShadow: event.id === -1 ? '0 4px 6px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15)' : 'none',
+                          zIndex: event.id === -1 ? 10 : 1,
+                          position: event.id === -1 ? 'relative' : 'static',
                           '&:hover': { filter: 'brightness(0.9)' },
                           transition: 'filter 0.15s',
                         }}
