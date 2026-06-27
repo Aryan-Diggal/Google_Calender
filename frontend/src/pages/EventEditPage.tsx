@@ -287,13 +287,14 @@ const EventEditPage: React.FC = () => {
         
         {/* Left Column (Event Details) */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0 }}>
-          <Box sx={{ display: 'flex', gap: 3, borderBottom: '1px solid #dadce0', mb: 2 }}>
-            <Typography sx={{ fontSize: '0.875rem', color: '#1a73e8', fontWeight: 500, pb: 1, borderBottom: '2px solid #1a73e8' }}>Event details</Typography>
-            <Typography sx={{ fontSize: '0.875rem', color: '#5f6368', fontWeight: 500, pb: 1, cursor: 'pointer' }}>Find a time</Typography>
-          </Box>
+          <Box sx={{ boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)', border: '1px solid #dadce0', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            
+            <Box sx={{ display: 'flex', gap: 3, borderBottom: '1px solid #dadce0', px: 3, pt: 2, backgroundColor: '#ffffff' }}>
+              <Typography sx={{ fontSize: '0.875rem', color: '#1a73e8', fontWeight: 500, pb: 1, borderBottom: '2px solid #1a73e8' }}>Event details</Typography>
+              <Typography sx={{ fontSize: '0.875rem', color: '#5f6368', fontWeight: 500, pb: 1, cursor: 'pointer' }}>Find a time</Typography>
+            </Box>
 
-          <Box sx={{ boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)', border: 'none', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2, backgroundColor: '#ffffff' }}>
               <VideocamIcon sx={{ color: '#fbbc04' }} />
               <Typography sx={{ color: '#3c4043', fontSize: '0.875rem' }}>Add Google Meet video conferencing</Typography>
             </Box>
@@ -303,7 +304,7 @@ const EventEditPage: React.FC = () => {
               <Typography sx={{ color: '#5f6368', fontSize: '0.875rem' }}>Add location</Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2, backgroundColor: '#ffffff' }}>
               <NotificationsIcon sx={{ color: '#5f6368' }} />
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Select size="small" value="notification" sx={{ height: 32, fontSize: '0.875rem', backgroundColor: '#f1f3f4', '& fieldset': { border: 'none' } }}>
@@ -317,11 +318,11 @@ const EventEditPage: React.FC = () => {
                 <IconButton size="small"><CloseIcon fontSize="small" /></IconButton>
               </Box>
             </Box>
-            <Box sx={{ pl: 6, pb: 2 }}>
+            <Box sx={{ pl: 6, pb: 2, backgroundColor: '#ffffff' }}>
               <Typography sx={{ color: '#1a73e8', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' }}>Add notification</Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 1.5, backgroundColor: '#ffffff' }}>
               <CalendarIcon sx={{ color: '#5f6368' }} />
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Select size="small" value="aryan" sx={{ height: 32, fontSize: '0.875rem', backgroundColor: '#f1f3f4', '& fieldset': { border: 'none' } }}>
@@ -347,7 +348,7 @@ const EventEditPage: React.FC = () => {
               </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 6, pr: 2, py: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 6, pr: 2, py: 1.5, backgroundColor: '#ffffff', pb: 2 }}>
               <Select size="small" value="free" sx={{ height: 32, fontSize: '0.875rem', backgroundColor: '#f1f3f4', '& fieldset': { border: 'none' } }}>
                 <MenuItem value="free">Free</MenuItem>
               </Select>
@@ -356,7 +357,7 @@ const EventEditPage: React.FC = () => {
               </Select>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, px: 2, py: 2, backgroundColor: '#ffffff', borderTop: '1px solid #dadce0', minHeight: 150 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, px: 2, py: 2, backgroundColor: '#f1f3f4', borderTop: 'none', minHeight: 150 }}>
               <NotesIcon sx={{ color: '#5f6368', mt: 1 }} />
               <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <Box sx={{ display: 'flex', gap: 1, mb: 1, color: '#5f6368' }}>
