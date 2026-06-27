@@ -106,7 +106,7 @@ const WeekView: React.FC<WeekViewProps> = ({
         {days.map((day, i) => {
           const allDayEvents = getAllDayEventsForDay(day);
           return (
-            <Box key={i} sx={{ flex: 1, borderLeft: '1px solid #e0e0e0', p: 0.25 }}>
+            <Box key={i} sx={{ flex: 1, minWidth: 0, borderLeft: '1px solid #e0e0e0', p: 0.25 }}>
               {allDayEvents.map((event) => (
                 <Box
                   key={event.id}
@@ -159,6 +159,7 @@ const WeekView: React.FC<WeekViewProps> = ({
               key={di}
               sx={{
                 flex: 1,
+                minWidth: 0,
                 borderLeft: '1px solid #e0e0e0',
                 position: 'relative',
                 height: HOUR_HEIGHT * 24,

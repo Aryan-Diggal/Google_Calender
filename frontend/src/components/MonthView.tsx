@@ -103,6 +103,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                     borderRight: di < 6 ? '1px solid #e0e0e0' : 'none',
                     p: 0.5,
                     minHeight: 100,
+                    minWidth: 0,
                     backgroundColor: isDragOver ? '#e8f0fe' : 'transparent',
                     transition: 'background-color 0.15s',
                     cursor: 'pointer',
