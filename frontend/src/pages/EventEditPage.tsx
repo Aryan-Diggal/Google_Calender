@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box, IconButton, Typography, Button, TextField, Checkbox, 
   FormControlLabel, MenuItem, Select, CircularProgress,
@@ -14,9 +14,8 @@ import {
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate } from 'react-router-dom';
-import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay } from 'date-fns';
+import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, addMinutes, addDays } from 'date-fns';
 import { eventService } from '../services/api';
-import { Event } from '../types/Event';
 import { useSnackbar } from 'notistack';
 
 const generateTimeOptions = () => {
@@ -33,10 +32,20 @@ const generateTimeOptions = () => {
 
 const formatTime = (date: Date) => format(date, 'h:mma').toLowerCase();
 
-const getDurationString = (start: Date, end: Date) => {
+const getDurationString = (startDate: Date, startTime: Date, endDate: Date, optionTime: Date) => {
+  const start = new Date(startDate);
+  start.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
+  
+  const end = new Date(endDate);
+  end.setHours(optionTime.getHours(), optionTime.getMinutes(), 0, 0);
+
   let diffMinutes = differenceInMinutes(end, start);
-  if (diffMinutes < 0) diffMinutes += 24 * 60; 
-  if (diffMinutes === 0) return '';
+  
+  if (diffMinutes <= 0 && isSameDay(startDate, endDate)) {
+    diffMinutes += 24 * 60; 
+  }
+  
+  if (diffMinutes <= 0) return '';
   const diffHours = diffMinutes / 60;
   return `(${diffHours} hr${diffHours !== 1 ? 's' : ''})`;
 };
@@ -47,8 +56,8 @@ const EventEditPage: React.FC = () => {
 
   const getDefaultStart = () => {
     const now = new Date();
-    now.setMinutes(0, 0, 0);
-    return now;
+    const remainder = now.getMinutes() % 30;
+    return addMinutes(now, 30 - remainder);
   };
   const getDefaultEnd = () => addHours(getDefaultStart(), 1);
 
@@ -67,7 +76,28 @@ const EventEditPage: React.FC = () => {
   const handleStartTimeChange = (newTimeString: string) => {
     const newTime = parse(newTimeString, 'h:mma', new Date());
     setStartTime(newTime);
-    setEndTime(addHours(newTime, 1));
+    
+    const newEnd = addHours(newTime, 1);
+    setEndTime(newEnd);
+    
+    if (isSameDay(startDate, endDate) && newEnd.getDate() !== newTime.getDate()) {
+      setEndDate(addDays(endDate, 1));
+    }
+  };
+
+  const handleEndTimeChange = (newTimeString: string) => {
+    const newTime = parse(newTimeString, 'h:mma', new Date());
+    setEndTime(newTime);
+
+    const startObj = new Date(startDate);
+    startObj.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
+    const newEndObj = new Date(endDate);
+    newEndObj.setHours(newTime.getHours(), newTime.getMinutes(), 0, 0);
+
+    // If picking an earlier time on the same day, bump the end date forward 1 day
+    if (isSameDay(startDate, endDate) && differenceInMinutes(newEndObj, startObj) <= 0) {
+      setEndDate(addDays(endDate, 1));
+    }
   };
 
   const getCombinedDate = (date: Date, time: Date, isAllDay: boolean) => {
@@ -202,14 +232,14 @@ const EventEditPage: React.FC = () => {
 
               <Select
                 value={formatTime(endTime)}
-                onChange={(e) => setEndTime(parse(e.target.value, 'h:mma', new Date()))}
+                onChange={(e) => handleEndTimeChange(e.target.value)}
                 variant="standard"
                 disableUnderline
                 sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}
               >
                 {timeOptions.map((t) => (
                   <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>
-                    {formatTime(t)} {getDurationString(startTime, t)}
+                    {formatTime(t)} {getDurationString(startDate, startTime, endDate, t)}
                   </MenuItem>
                 ))}
               </Select>
