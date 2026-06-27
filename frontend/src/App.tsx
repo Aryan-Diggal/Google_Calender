@@ -376,51 +376,8 @@ function CalendarApp() {
           onDateSelect={setSelectedDate}
         />
 
-        {/* When sidebar is CLOSED → show compact FAB "+" button */}
-        <AnimatePresence>
-          {!sidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.18 }}
-              style={{
-                position: 'absolute',
-                top: 16,
-                left: 16,
-                zIndex: 100,
-              }}
-            >
-              <Tooltip title="Create new event" placement="right">
-                <Box
-                  id="create-fab-btn"
-                  onClick={() => handleCreateEvent()}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    px: 1.5,
-                    py: 1,
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #dadce0',
-                    borderRadius: '16px',
-                    cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                    transition: 'box-shadow 0.2s',
-                    '&:hover': {
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                    },
-                  }}
-                >
-                  <AddIcon sx={{ color: '#3c4043', fontSize: 22 }} />
-                </Box>
-              </Tooltip>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Main calendar area */}
-        <Box sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', pr: 2, pl: sidebarOpen ? 2 : 10, pb: 2 }}>
+        <Box sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', px: 2, pb: 2 }}>
           <Box
             sx={{
               flexGrow: 1,
@@ -433,6 +390,49 @@ function CalendarApp() {
               position: 'relative',
             }}
           >
+            {/* When sidebar is CLOSED → show compact FAB "+" button INSIDE the calendar card */}
+            <AnimatePresence>
+              {!sidebarOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.18 }}
+                  style={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    zIndex: 100,
+                  }}
+                >
+                  <Tooltip title="Create new event" placement="right">
+                    <Box
+                      id="create-fab-btn"
+                      onClick={() => handleCreateEvent()}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        px: 1.5,
+                        py: 1,
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #dadce0',
+                        borderRadius: '16px',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                        transition: 'box-shadow 0.2s',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                        },
+                      }}
+                    >
+                      <AddIcon sx={{ color: '#3c4043', fontSize: 22 }} />
+                    </Box>
+                  </Tooltip>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentView}
