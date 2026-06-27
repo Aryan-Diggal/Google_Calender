@@ -164,7 +164,9 @@ const EventModal: React.FC<EventModalProps> = ({
       setEndTime(defaultE);
       setLocation('');
       setColor('#1a73e8');
-      setAllDay(false);
+      const isMonthView = defaultStartTime ? (defaultStartTime.getHours() === 0 && defaultStartTime.getMinutes() === 0) : false;
+      setAllDay(isMonthView);
+      setShowTimeInputs(!isMonthView);
       setRecurrence('none');
     }
     setOverlappingEvents([]);
