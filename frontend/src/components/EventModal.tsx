@@ -366,7 +366,7 @@ const EventModal: React.FC<EventModalProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2, pt: 1, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-        <Button onClick={handleMoreOptions} sx={{ textTransform: 'none', fontWeight: 500, color: '#1a73e8', '&:hover': { backgroundColor: '#f1f3f4' }, mr: 'auto' }}>More options</Button>
+        <Button onClick={handleMoreOptions} sx={{ textTransform: 'none', fontWeight: 500, color: '#1a73e8', '&:hover': { backgroundColor: '#f1f3f4' } }}>More options</Button>
         <Button variant="contained" onClick={() => handleSave(false)} disabled={isSaving || checkingOverlap} sx={{ backgroundColor: '#1a73e8', color: '#fff', textTransform: 'none', borderRadius: '20px', px: 3, fontWeight: 500, boxShadow: 'none', '&:hover': { backgroundColor: '#1557b0' } }}>
           {isSaving || checkingOverlap ? <CircularProgress size={20} color="inherit" /> : 'Save'}
         </Button>
