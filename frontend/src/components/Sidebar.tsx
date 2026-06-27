@@ -103,6 +103,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           top: 64,
           height: 'calc(100% - 64px)',
           transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1)',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            backgroundColor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'transparent',
+            borderRadius: '4px',
+          },
+          '&:hover::-webkit-scrollbar-thumb': {
+            backgroundColor: '#dadce0',
+          },
         },
       }}
     >
