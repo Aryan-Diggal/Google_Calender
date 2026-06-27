@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SnackbarProvider } from 'notistack';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import App from './App';
 import './index.css';
 
@@ -33,13 +35,15 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SnackbarProvider
-        maxSnack={3}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        autoHideDuration={3000}
-      >
-        <App />
-      </SnackbarProvider>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <SnackbarProvider
+          maxSnack={3}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          autoHideDuration={3000}
+        >
+          <App />
+        </SnackbarProvider>
+      </LocalizationProvider>
     </ThemeProvider>
   </React.StrictMode>
 );
