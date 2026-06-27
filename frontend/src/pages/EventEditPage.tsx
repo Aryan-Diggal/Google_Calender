@@ -299,9 +299,11 @@ const EventEditPage: React.FC = () => {
               <Typography sx={{ color: '#3c4043', fontSize: '0.875rem' }}>Add Google Meet video conferencing</Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 1.5, backgroundColor: '#f1f3f4' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 1.5, backgroundColor: '#ffffff' }}>
               <LocationIcon sx={{ color: '#5f6368' }} />
-              <Typography sx={{ color: '#5f6368', fontSize: '0.875rem' }}>Add location</Typography>
+              <Box sx={{ flexGrow: 1, backgroundColor: '#f1f3f4', borderRadius: '4px', px: 2, py: 1 }}>
+                <Typography sx={{ color: '#5f6368', fontSize: '0.875rem' }}>Add location</Typography>
+              </Box>
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2, backgroundColor: '#ffffff' }}>
@@ -357,9 +359,9 @@ const EventEditPage: React.FC = () => {
               </Select>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, px: 2, py: 2, backgroundColor: '#f1f3f4', borderTop: 'none', minHeight: 150 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, px: 2, py: 2, backgroundColor: '#ffffff', pb: 3 }}>
               <NotesIcon sx={{ color: '#5f6368', mt: 1 }} />
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#f1f3f4', borderRadius: '8px', px: 2, py: 2, minHeight: 150 }}>
                 <Box sx={{ display: 'flex', gap: 1, mb: 1, color: '#5f6368' }}>
                   <FormatBold fontSize="small" sx={{ cursor: 'pointer' }} />
                   <FormatItalic fontSize="small" sx={{ cursor: 'pointer' }} />
