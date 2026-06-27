@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Box, IconButton, Typography, Button, TextField, Checkbox, 
-  FormControlLabel, MenuItem, Select, CircularProgress,
+  FormControlLabel, MenuItem, Select, CircularProgress, Menu
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -11,6 +11,7 @@ import {
   CalendarToday as CalendarIcon,
   Notes as NotesIcon,
   FormatBold, FormatItalic, FormatUnderlined, FormatListBulleted, FormatListNumbered, Link as LinkIcon, FormatClear,
+  ArrowDropDown as ArrowDropDownIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate } from 'react-router-dom';
@@ -69,6 +70,10 @@ const EventEditPage: React.FC = () => {
   
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+
+  const [colorAnchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedColor, setSelectedColor] = useState('#1a73e8');
+  const GOOGLE_COLORS = ['#d50000', '#e67c73', '#f4511e', '#f6bf26', '#33b679', '#0b8043', '#039be5', '#3f51b5', '#7986cb', '#8e24aa', '#616161'];
   
   const startTimeOptions = useMemo(() => generateStartTimeOptions(), []);
 
@@ -286,7 +291,7 @@ const EventEditPage: React.FC = () => {
             <Typography sx={{ fontSize: '0.875rem', color: '#5f6368', fontWeight: 500, pb: 1, cursor: 'pointer' }}>Find a time</Typography>
           </Box>
 
-          <Box sx={{ border: '1px solid #dadce0', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)', border: 'none', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2 }}>
               <VideocamIcon sx={{ color: '#fbbc04' }} />
               <Typography sx={{ color: '#3c4043', fontSize: '0.875rem' }}>Add Google Meet video conferencing</Typography>
@@ -321,10 +326,21 @@ const EventEditPage: React.FC = () => {
                 <Select size="small" value="aryan" sx={{ height: 32, fontSize: '0.875rem', backgroundColor: '#f1f3f4', '& fieldset': { border: 'none' } }}>
                   <MenuItem value="aryan">Aryan Diggal</MenuItem>
                 </Select>
-                <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f3f4', borderRadius: '4px', px: 1, gap: 0.5 }}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#1a73e8' }} />
-                  <CloseIcon fontSize="small" sx={{ fontSize: 16, color: '#5f6368', cursor: 'pointer' }} />
+                <Box onClick={(e) => setColorAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f3f4', borderRadius: '4px', px: 1, gap: 0.5, cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } }}>
+                  <Box sx={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: selectedColor }} />
+                  <ArrowDropDownIcon fontSize="small" sx={{ fontSize: 20, color: '#5f6368' }} />
                 </Box>
+                <Menu anchorEl={colorAnchorEl} open={Boolean(colorAnchorEl)} onClose={() => setColorAnchorEl(null)} PaperProps={{ sx: { p: 1, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' } }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
+                    {GOOGLE_COLORS.map(color => (
+                      <Box
+                        key={color}
+                        onClick={() => { setSelectedColor(color); setColorAnchorEl(null); }}
+                        sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: color, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                      />
+                    ))}
+                  </Box>
+                </Menu>
               </Box>
             </Box>
 
