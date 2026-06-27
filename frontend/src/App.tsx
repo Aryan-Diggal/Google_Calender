@@ -113,7 +113,7 @@ function CalendarApp() {
         return `${format(start, 'MMM yyyy')} – ${format(end, 'MMM yyyy')}`;
       }
     }
-    return format(selectedDate, 'EEEE, MMMM d, yyyy');
+    return format(selectedDate, 'd MMMM yyyy');
   };
 
   const handleCreateEvent = (startTime?: Date, anchor?: HTMLElement) => {
@@ -168,15 +168,66 @@ function CalendarApp() {
     try {
       const event = events.find(e => e.id === eventId);
       if (!event) return;
-      await eventService.updateEvent(eventId, {
+
+      // Optimistic UI Update
+      setEvents(prev => prev.map(e => e.id === eventId ? {
+        ...e,
+        startTime: newStartTime.toISOString(),
+        endTime: newEndTime.toISOString()
+      } : e));
+
+      const updatePayload: any = {
         ...event,
         startTime: newStartTime.toISOString(),
         endTime: newEndTime.toISOString(),
-      });
-      await loadEvents();
+      };
+      // Zod doesn't accept null for optional strings
+      if (updatePayload.location === null) delete updatePayload.location;
+      if (updatePayload.description === null) delete updatePayload.description;
+      if (updatePayload.color === null) delete updatePayload.color;
+      
+      const updated = await eventService.updateEvent(eventId, updatePayload);
+      // Sync with definitive server response
+      setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
+
       enqueueSnackbar('Event moved!', { variant: 'success' });
     } catch {
+      loadEvents(); // Revert on failure
       enqueueSnackbar('Failed to move event', { variant: 'error' });
+    }
+  };
+
+  const handleEventResize = async (eventId: number, newStartTime: Date, newEndTime: Date) => {
+    try {
+      const event = events.find(e => e.id === eventId);
+      if (!event) return;
+
+      // Optimistic UI Update
+      setEvents(prev => prev.map(e => e.id === eventId ? {
+        ...e,
+        startTime: newStartTime.toISOString(),
+        endTime: newEndTime.toISOString()
+      } : e));
+
+      const updatePayload: any = {
+        ...event,
+        startTime: newStartTime.toISOString(),
+        endTime: newEndTime.toISOString(),
+      };
+      // Zod doesn't accept null for optional strings
+      if (updatePayload.location === null) delete updatePayload.location;
+      if (updatePayload.description === null) delete updatePayload.description;
+      if (updatePayload.color === null) delete updatePayload.color;
+
+      const updated = await eventService.updateEvent(eventId, updatePayload);
+      // Sync with definitive server response
+      setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
+
+      // Optional: No snackbar for resizing so it doesn't get annoying, but we'll leave it for now
+      enqueueSnackbar('Event updated', { variant: 'success' });
+    } catch {
+      loadEvents(); // Revert on failure
+      enqueueSnackbar('Failed to resize event', { variant: 'error' });
     }
   };
 
@@ -517,6 +568,7 @@ function CalendarApp() {
                   onEventClick={handleEditEvent}
                   onCreateEvent={handleCreateEvent}
                   onEventDrop={handleEventDrop}
+                  onEventResize={handleEventResize}
                   loading={loading}
                 />
               </motion.div>

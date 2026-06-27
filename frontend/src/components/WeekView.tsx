@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
 import { startOfWeek, addDays, format, isSameDay, isToday } from 'date-fns';
 import { Event } from '../types/Event';
@@ -11,6 +11,7 @@ interface WeekViewProps {
   onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
 const HOUR_HEIGHT = 40;
@@ -22,9 +23,81 @@ const WeekView: React.FC<WeekViewProps> = ({
   onEventClick,
   onCreateEvent,
   onEventDrop,
+  onEventResize,
 }) => {
   const weekStart = startOfWeek(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // --- Resizing state ---
+  const [resizingEventId, setResizingEventId] = useState<number | null>(null);
+  const [resizeType, setResizeType] = useState<'top' | 'bottom' | null>(null);
+  const [resizeDeltaMins, setResizeDeltaMins] = useState<number>(0);
+  const resizeDeltaMinsRef = useRef<number>(0);
+  const [originalEvent, setOriginalEvent] = useState<Event | null>(null);
+  const initialYRef = useRef<number>(0);
+
+  const handleResizeStart = (e: React.MouseEvent, event: Event, type: 'top' | 'bottom') => {
+    e.stopPropagation();
+    e.preventDefault();
+    setResizingEventId(event.id);
+    setResizeType(type);
+    setOriginalEvent(event);
+    setResizeDeltaMins(0);
+    resizeDeltaMinsRef.current = 0;
+    initialYRef.current = e.clientY;
+  };
+
+  useEffect(() => {
+    if (!resizingEventId) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaY = e.clientY - initialYRef.current;
+      let deltaMins = (deltaY / HOUR_HEIGHT) * 60;
+      deltaMins = Math.round(deltaMins / 15) * 15;
+
+      if (originalEvent) {
+        const start = new Date(originalEvent.startTime);
+        const end = new Date(originalEvent.endTime);
+        const durationMins = (end.getTime() - start.getTime()) / 60000;
+
+        if (resizeType === 'top') {
+          if (durationMins - deltaMins < 15) deltaMins = durationMins - 15;
+        } else {
+          if (durationMins + deltaMins < 15) deltaMins = 15 - durationMins;
+        }
+      }
+      resizeDeltaMinsRef.current = deltaMins;
+      setResizeDeltaMins(deltaMins);
+    };
+
+    const handleMouseUp = async () => {
+      const finalDelta = resizeDeltaMinsRef.current;
+      if (originalEvent && finalDelta !== 0) {
+        const start = new Date(originalEvent.startTime);
+        const end = new Date(originalEvent.endTime);
+        if (resizeType === 'top') {
+          start.setMinutes(start.getMinutes() + finalDelta);
+        } else {
+          end.setMinutes(end.getMinutes() + finalDelta);
+        }
+        await onEventResize(originalEvent.id!, start, end);
+      }
+      setResizingEventId(null);
+      setResizeType(null);
+      setOriginalEvent(null);
+      setResizeDeltaMins(0);
+      resizeDeltaMinsRef.current = 0;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizingEventId, resizeType, originalEvent, onEventResize]);
+  // ----------------------
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [draggingEvent, setDraggingEvent] = useState<Event | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -246,6 +319,26 @@ const WeekView: React.FC<WeekViewProps> = ({
               {/* Event blocks */}
               {processed.map((pe) => {
                 const { top, height, width, left } = getEventStyle(pe, 1, 0);
+                
+                const isResizing = resizingEventId === pe.id;
+                let renderTop = pe.position.top;
+                let renderHeight = Math.max(pe.position.height, 22);
+                let renderStart = new Date(pe.startTime);
+                let renderEnd = new Date(pe.endTime);
+
+                if (isResizing) {
+                  const deltaPx = (resizeDeltaMins / 60) * HOUR_HEIGHT;
+                  if (resizeType === 'top') {
+                    renderTop += deltaPx;
+                    renderHeight -= deltaPx;
+                    renderStart.setMinutes(renderStart.getMinutes() + resizeDeltaMins);
+                  } else {
+                    renderHeight += deltaPx;
+                    renderEnd.setMinutes(renderEnd.getMinutes() + resizeDeltaMins);
+                  }
+                  renderHeight = Math.max(renderHeight, 10);
+                }
+
                 return (
                   <motion.div
                     key={pe.id}
@@ -256,15 +349,15 @@ const WeekView: React.FC<WeekViewProps> = ({
                     transition={{ duration: 0.15 }}
                     style={{
                       position: 'absolute',
-                      top: pe.position.top,
-                      height: Math.max(pe.position.height, 22),
-                      width: `${pe.position.width - 4}%`,
-                      left: `${pe.position.left + 2}%`,
-                      zIndex: pe.position.zIndex + 1,
+                      top: renderTop,
+                      height: renderHeight,
+                      width: `calc(${pe.position.width}% - 6px)`,
+                      left: `${pe.position.left}%`,
+                      zIndex: isResizing ? 999 : pe.position.zIndex + 1,
                     }}
                   >
                     <Tooltip
-                      title={`${pe.title} • ${format(new Date(pe.startTime), 'h:mm a')} - ${format(new Date(pe.endTime), 'h:mm a')}`}
+                      title={`${pe.title} • ${format(renderStart, 'h:mm a')} - ${format(renderEnd, 'h:mm a')}`}
                       placement="top"
                       arrow
                     >
@@ -281,17 +374,46 @@ const WeekView: React.FC<WeekViewProps> = ({
                           boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                           borderLeft: `3px solid ${pe.color ? pe.color + 'cc' : '#1558b0'}`,
                           '&:hover': { filter: 'brightness(0.92)', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' },
-                          transition: 'filter 0.15s, box-shadow 0.15s',
+                          transition: isResizing ? 'none' : 'filter 0.15s, box-shadow 0.15s',
                         }}
                       >
-                        <Typography sx={{ color: 'white', fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.2 }} noWrap>
+                        <Typography sx={{ color: 'white', fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.2, pointerEvents: 'none' }} noWrap>
                           {pe.title}
                         </Typography>
-                        {pe.position.height > 36 && (
-                          <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', lineHeight: 1.2 }}>
-                            {format(new Date(pe.startTime), 'h:mm a')} – {format(new Date(pe.endTime), 'h:mm a')}
+                        {renderHeight > 36 && (
+                          <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', lineHeight: 1.2, pointerEvents: 'none' }}>
+                            {format(renderStart, 'h:mm a')} – {format(renderEnd, 'h:mm a')}
                           </Typography>
                         )}
+                        
+                        {/* Top Resize Handle */}
+                        <Box
+                          onMouseDown={(e) => handleResizeStart(e, pe, 'top')}
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '8px',
+                            cursor: 'ns-resize',
+                            zIndex: 10,
+                            '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' }
+                          }}
+                        />
+                        {/* Bottom Resize Handle */}
+                        <Box
+                          onMouseDown={(e) => handleResizeStart(e, pe, 'bottom')}
+                          sx={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '8px',
+                            cursor: 'ns-resize',
+                            zIndex: 10,
+                            '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' }
+                          }}
+                        />
                       </Box>
                     </Tooltip>
                   </motion.div>

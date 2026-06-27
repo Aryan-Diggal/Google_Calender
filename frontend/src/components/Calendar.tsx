@@ -23,6 +23,7 @@ interface CalendarProps {
   onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
   loading: boolean;
 }
 
@@ -35,6 +36,7 @@ const Calendar: React.FC<CalendarProps> = ({
   onEventClick,
   onCreateEvent,
   onEventDrop,
+  onEventResize,
   loading,
 }) => {
   const filteredEvents = useMemo(() => {
@@ -77,6 +79,7 @@ const Calendar: React.FC<CalendarProps> = ({
             onEventClick={onEventClick}
             onCreateEvent={onCreateEvent}
             onEventDrop={onEventDrop}
+            onEventResize={onEventResize}
           />
         )}
         {currentView === 'week' && (
@@ -86,6 +89,7 @@ const Calendar: React.FC<CalendarProps> = ({
             onEventClick={onEventClick}
             onCreateEvent={onCreateEvent}
             onEventDrop={onEventDrop}
+            onEventResize={onEventResize}
           />
         )}
         {currentView === 'day' && (
@@ -95,6 +99,7 @@ const Calendar: React.FC<CalendarProps> = ({
             onEventClick={onEventClick}
             onCreateEvent={onCreateEvent}
             onEventDrop={onEventDrop}
+            onEventResize={onEventResize}
           />
         )}
       </Box>
