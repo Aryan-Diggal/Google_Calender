@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Popover, DialogContent, DialogActions,
   TextField, Button, Box, IconButton, Typography, Checkbox, FormControlLabel, Select, MenuItem, Alert, CircularProgress, Menu,
@@ -117,6 +117,7 @@ const EventModal: React.FC<EventModalProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [colorAnchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
   const [calendarAnchorEl, setCalendarAnchorEl] = useState<null | HTMLElement>(null);
+  const warningRef = useRef<HTMLDivElement>(null);
 
   const GOOGLE_COLORS = ['#d50000', '#e67c73', '#f4511e', '#f6bf26', '#33b679', '#0b8043', '#039be5', '#3f51b5', '#7986cb', '#8e24aa', '#616161'];
 
@@ -220,6 +221,11 @@ const EventModal: React.FC<EventModalProps> = ({
       const overlaps = await eventService.getOverlappingEvents(startISO, endISO, event?.id);
       setOverlappingEvents(overlaps);
       setOverlapChecked(true);
+      if (overlaps.length > 0) {
+        setTimeout(() => {
+          warningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+      }
       return overlaps;
     } catch {
       return [];
@@ -520,7 +526,7 @@ const EventModal: React.FC<EventModalProps> = ({
           
           <AnimatePresence>
             {overlappingEvents.length > 0 && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+              <motion.div ref={warningRef} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
                 <Alert severity="warning" icon={<WarningIcon />} sx={{ mt: 1, mb: 1, borderRadius: '8px' }} action={<Button size="small" color="warning" variant="contained" onClick={() => handleSave(true)} disabled={isSaving}>{isSaving ? <CircularProgress size={16} /> : 'Save anyway'}</Button>}>
                   <Typography variant="body2" fontWeight={600}>Time conflict detected!</Typography>
                 </Alert>
