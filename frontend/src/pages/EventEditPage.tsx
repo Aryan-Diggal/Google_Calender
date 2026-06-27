@@ -193,40 +193,47 @@ const EventEditPage: React.FC = () => {
       {/* Date and Time Row */}
       <Box sx={{ pl: 8, pr: 4, py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
         
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'nowrap' }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'nowrap', width: 'max-content' }}>
           <DatePicker
             value={startDate}
             onChange={(val) => { if(val) setStartDate(val); }}
             format="EEEE, d MMMM"
-            slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, minWidth: 140 } } } }}
+            slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }}
           />
           
           {!allDay && (
             <>
-              <Select value={formatTime(startTime)} onChange={(e) => handleStartTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, minWidth: 90, '& .MuiSelect-select': { py: 0 } }}>
+              <Select value={formatTime(startTime)} onChange={(e) => handleStartTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}>
                 {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
               </Select>
+              
               <Typography sx={{ color: '#5f6368', fontSize: '0.875rem', mx: 0.5 }}>–</Typography>
               
+              <Select 
+                value={currentEndObj.toISOString()} 
+                onChange={(e) => handleEndTimeChange(e.target.value)} 
+                renderValue={(val) => formatTime(new Date(val))}
+                variant="standard" disableUnderline 
+                sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0 } }}
+              >
+                {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
+              </Select>
+
               {!isSameDay(startDate, endDate) && (
                 <DatePicker
                   value={endDate}
                   onChange={(val) => { if(val) setEndDate(val); }}
                   format="EEEE, d MMMM"
-                  slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', minWidth: 140 } } } }}
+                  slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }}
                 />
               )}
-
-              <Select value={currentEndObj.toISOString()} onChange={(e) => handleEndTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, minWidth: 100, '& .MuiSelect-select': { py: 0 } }}>
-                {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
-              </Select>
             </>
           )}
 
           {allDay && (
             <>
               <Typography sx={{ color: '#5f6368', fontSize: '0.875rem', mx: 0.5 }}>to</Typography>
-              <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, minWidth: 140 } } } }} />
+              <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
             </>
           )}
         </Box>

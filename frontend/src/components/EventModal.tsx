@@ -244,7 +244,13 @@ const EventModal: React.FC<EventModalProps> = ({
         animate: { opacity: 1, scale: 1, y: 0 },
         exit: { opacity: 0, scale: 0.95, y: -20 },
         transition: { duration: 0.2, ease: 'easeOut' },
-        sx: { borderRadius: '8px', boxShadow: '0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2)', m: 2, width: '480px' },
+        sx: { 
+          borderRadius: '8px', 
+          boxShadow: '0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2)', 
+          m: 2, 
+          width: 'auto',
+          minWidth: '448px'
+        },
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#f1f3f4', px: 1, py: 0.5 }}>
@@ -272,28 +278,50 @@ const EventModal: React.FC<EventModalProps> = ({
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
               
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', width: 'max-content' }}>
-                <DatePicker value={startDate} onChange={(val) => { if(val) setStartDate(val); }} format="EEE, d MMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, minWidth: 100 } } } }} />
+                <DatePicker 
+                  value={startDate} 
+                  onChange={(val) => { if(val) setStartDate(val); }} 
+                  format="EEEE, d MMMM" 
+                  slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} 
+                />
                 
                 {!allDay && (
                   <>
-                    <Select value={formatTime(startTime)} onChange={(e) => handleStartTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, minWidth: 70, '& .MuiSelect-select': { py: 0 } }}>
+                    <Select 
+                      value={formatTime(startTime)} 
+                      onChange={(e) => handleStartTimeChange(e.target.value)} 
+                      variant="standard" disableUnderline 
+                      sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
+                    >
                       {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
                     </Select>
+                    
                     <Typography sx={{ color: '#5f6368', mx: 0.2 }}>–</Typography>
                     
-                    {!isSameDay(startDate, endDate) && (
-                      <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEE, d MMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, minWidth: 100 } } } }} />
-                    )}
-
-                    <Select value={currentEndObj.toISOString()} onChange={(e) => handleEndTimeChange(e.target.value)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, minWidth: 80, '& .MuiSelect-select': { py: 0 } }}>
+                    <Select 
+                      value={currentEndObj.toISOString()} 
+                      onChange={(e) => handleEndTimeChange(e.target.value)} 
+                      renderValue={(val) => formatTime(new Date(val))}
+                      variant="standard" disableUnderline 
+                      sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
+                    >
                       {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
                     </Select>
+
+                    {!isSameDay(startDate, endDate) && (
+                      <DatePicker 
+                        value={endDate} 
+                        onChange={(val) => { if(val) setEndDate(val); }} 
+                        format="EEEE, d MMMM" 
+                        slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} 
+                      />
+                    )}
                   </>
                 )}
                 {allDay && (
                   <>
                     <Typography sx={{ color: '#5f6368', mx: 0.5 }}>–</Typography>
-                    <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEE, d MMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, minWidth: 100 } } } }} />
+                    <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="EEEE, d MMMM" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } } } } }} />
                   </>
                 )}
               </Box>
