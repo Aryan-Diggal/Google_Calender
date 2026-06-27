@@ -168,6 +168,7 @@ const EventModal: React.FC<EventModalProps> = ({
     }
     setOverlappingEvents([]);
     setOverlapChecked(false);
+    setShowAdvanced(false);
   }, [event, open, defaultStartTime]);
 
   useEffect(() => {
