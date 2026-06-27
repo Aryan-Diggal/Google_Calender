@@ -65,7 +65,8 @@ function CalendarApp() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null);
+  const [eventAnchorEl, setEventAnchorEl] = useState<null | HTMLElement>(null);
   const [defaultStartTime, setDefaultStartTime] = useState<Date | null>(null);
 
   const [draftEvent, setDraftEvent] = useState<Partial<Event> | null>(null);
@@ -110,14 +111,14 @@ function CalendarApp() {
   const handleCreateEvent = (startTime?: Date, anchor?: HTMLElement) => {
     setSelectedEvent(null);
     setDefaultStartTime(startTime || null);
-    setAnchorEl(anchor || null);
+    setEventAnchorEl(anchor || null);
     setIsEventModalOpen(true);
   };
 
   const handleEditEvent = (event: Event, anchor?: HTMLElement) => {
     setSelectedEvent(event);
     setDefaultStartTime(null);
-    setAnchorEl(anchor || null);
+    setEventAnchorEl(anchor || null);
     setIsEventModalOpen(true);
   };
 
@@ -377,7 +378,7 @@ function CalendarApp() {
           <Tooltip title={user?.name || 'Account'}>
             <IconButton
               id="avatar-btn"
-              onClick={(e) => setAnchorEl(e.currentTarget)}
+              onClick={(e) => setProfileAnchorEl(e.currentTarget)}
               sx={{ ml: 0.5 }}
             >
               <Avatar
@@ -389,15 +390,15 @@ function CalendarApp() {
                   fontWeight: 700,
                 }}
               >
-                {initials}
+                {user?.name.charAt(0).toUpperCase()}
               </Avatar>
             </IconButton>
           </Tooltip>
 
           <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
+            anchorEl={profileAnchorEl}
+            open={Boolean(profileAnchorEl)}
+            onClose={() => setProfileAnchorEl(null)}
             PaperProps={{ sx: { borderRadius: '12px', minWidth: 220, mt: 0.5, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
@@ -406,7 +407,7 @@ function CalendarApp() {
             </Box>
             <Divider />
             <MenuItem
-              onClick={() => { logout(); setAnchorEl(null); }}
+              onClick={() => { logout(); setProfileAnchorEl(null); }}
               sx={{ color: 'error.main', py: 1.25, fontSize: '0.875rem' }}
             >
               Sign out
@@ -566,8 +567,8 @@ function CalendarApp() {
 
       <EventModal
         open={isEventModalOpen}
-        anchorEl={anchorEl}
-        onClose={() => { setIsEventModalOpen(false); setSelectedEvent(null); setAnchorEl(null); setDraftEvent(null); }}
+        anchorEl={eventAnchorEl}
+        onClose={() => { setIsEventModalOpen(false); setSelectedEvent(null); setEventAnchorEl(null); setDraftEvent(null); }}
         onSave={handleSaveEvent}
         onDelete={handleDeleteEvent}
         event={selectedEvent}
