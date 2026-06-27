@@ -67,6 +67,9 @@ const EventEditPage: React.FC = () => {
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [isSaving, setIsSaving] = useState(false);
   
+  const [startOpen, setStartOpen] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
+  
   const startTimeOptions = useMemo(() => generateStartTimeOptions(), []);
 
   const endTimeOptions = useMemo(() => {
@@ -196,9 +199,12 @@ const EventEditPage: React.FC = () => {
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'nowrap', width: 'max-content' }}>
           <DatePicker
             value={startDate}
-            onChange={(val) => { if(val) setStartDate(val); }}
+            open={startOpen}
+            onOpen={() => setStartOpen(true)}
+            onClose={() => setStartOpen(false)}
+            onChange={(val) => { if(val) setStartDate(val); setStartOpen(false); }}
             format="d MMM yyyy"
-            slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, '& .MuiInputAdornment-root': { display: 'none' }, textAlign: 'center', input: { textAlign: 'center', padding: 0, width: '85px' } } } } }}
+            slotProps={{ textField: { onClick: () => setStartOpen(true), variant: 'standard', InputProps: { readOnly: true, disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, '& .MuiInputAdornment-root': { display: 'none' }, textAlign: 'center', input: { textAlign: 'center', padding: 0, width: '85px', cursor: 'pointer' } } } } }}
           />
           
           {!allDay && (
@@ -227,9 +233,12 @@ const EventEditPage: React.FC = () => {
 
               <DatePicker
                 value={endDate}
-                onChange={(val) => { if(val) setEndDate(val); }}
+                open={endOpen}
+                onOpen={() => setEndOpen(true)}
+                onClose={() => setEndOpen(false)}
+                onChange={(val) => { if(val) setEndDate(val); setEndOpen(false); }}
                 format="d MMM yyyy"
-                slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, '& .MuiInputAdornment-root': { display: 'none' }, textAlign: 'center', input: { textAlign: 'center', padding: 0, width: '85px' } } } } }}
+                slotProps={{ textField: { onClick: () => setEndOpen(true), variant: 'standard', InputProps: { readOnly: true, disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, '& .MuiInputAdornment-root': { display: 'none' }, textAlign: 'center', input: { textAlign: 'center', padding: 0, width: '85px', cursor: 'pointer' } } } } }}
               />
 
               <Typography sx={{ color: '#1a73e8', fontSize: '0.875rem', cursor: 'pointer', ml: 1 }}>Time zone</Typography>
@@ -239,7 +248,7 @@ const EventEditPage: React.FC = () => {
           {allDay && (
             <>
               <Typography sx={{ color: '#5f6368', fontSize: '0.875rem', mx: 0.5 }}>to</Typography>
-              <DatePicker value={endDate} onChange={(val) => { if(val) setEndDate(val); }} format="d MMM yyyy" slotProps={{ textField: { variant: 'standard', InputProps: { disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, '& .MuiInputAdornment-root': { display: 'none' }, textAlign: 'center', input: { textAlign: 'center', padding: 0, width: '85px' } } } } }} />
+              <DatePicker value={endDate} open={endOpen} onOpen={() => setEndOpen(true)} onClose={() => setEndOpen(false)} onChange={(val) => { if(val) setEndDate(val); setEndOpen(false); }} format="d MMM yyyy" slotProps={{ textField: { onClick: () => setEndOpen(true), variant: 'standard', InputProps: { readOnly: true, disableUnderline: true, sx: { fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' }, '& .MuiInputAdornment-root': { display: 'none' }, textAlign: 'center', input: { textAlign: 'center', padding: 0, width: '85px', cursor: 'pointer' } } } } }} />
               <Typography sx={{ color: '#1a73e8', fontSize: '0.875rem', cursor: 'pointer', ml: 1 }}>Time zone</Typography>
             </>
           )}
