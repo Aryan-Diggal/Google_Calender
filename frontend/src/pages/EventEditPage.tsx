@@ -12,6 +12,7 @@ import {
   Notes as NotesIcon,
   FormatBold, FormatItalic, FormatUnderlined, FormatListBulleted, FormatListNumbered, Link as LinkIcon, FormatClear,
   ArrowDropDown as ArrowDropDownIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate } from 'react-router-dom';
@@ -331,13 +332,15 @@ const EventEditPage: React.FC = () => {
                   <ArrowDropDownIcon fontSize="small" sx={{ fontSize: 20, color: '#5f6368' }} />
                 </Box>
                 <Menu anchorEl={colorAnchorEl} open={Boolean(colorAnchorEl)} onClose={() => setColorAnchorEl(null)} PaperProps={{ sx: { p: 1, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' } }}>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
                     {GOOGLE_COLORS.map(color => (
                       <Box
                         key={color}
                         onClick={() => { setSelectedColor(color); setColorAnchorEl(null); }}
-                        sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: color, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
-                      />
+                        sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: color, cursor: 'pointer', '&:hover': { opacity: 0.8 }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        {selectedColor === color && <CheckIcon sx={{ color: '#fff', fontSize: 16 }} />}
+                      </Box>
                     ))}
                   </Box>
                 </Menu>
