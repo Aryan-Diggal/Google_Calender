@@ -76,8 +76,8 @@ const MonthView: React.FC<MonthViewProps> = ({
       {/* Day headers */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', flexShrink: 0 }}>
         {WEEK_DAYS.map((day, i) => (
-          <Box key={day} sx={{ py: 1, textAlign: 'center', borderRight: i < 6 ? '1px solid #e0e0e0' : 'none' }}>
-            <Typography variant="caption" sx={{ color: '#70757a', fontWeight: 500, fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+          <Box key={day} sx={{ pt: 1.5, pb: 0, textAlign: 'center', borderRight: i < 6 ? '1px solid #e0e0e0' : 'none' }}>
+            <Typography variant="caption" sx={{ color: '#70757a', fontWeight: 500, fontSize: '0.7125rem', letterSpacing: '0.05em', lineHeight: 1 }}>
               {day.toUpperCase()}
             </Typography>
           </Box>
