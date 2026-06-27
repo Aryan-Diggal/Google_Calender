@@ -173,7 +173,7 @@ function CalendarApp() {
         sx={{
           backgroundColor: '#ffffff',
           color: '#5f6368',
-          borderBottom: '1px solid #e0e0e0',
+          borderBottom: 'none',
           zIndex: 1200,
           flexShrink: 0,
         }}
@@ -420,29 +420,42 @@ function CalendarApp() {
         </AnimatePresence>
 
         {/* Main calendar area */}
-        <Box sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentView}
-              initial={{ opacity: 0, x: 8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.18 }}
-              style={{ height: '100%' }}
-            >
-              <Calendar
-                events={events}
-                currentView={currentView}
-                selectedDate={selectedDate}
-                onViewChange={setCurrentView}
-                onDateChange={setSelectedDate}
-                onEventClick={handleEditEvent}
-                onCreateEvent={handleCreateEvent}
-                onEventDrop={handleEventDrop}
-                loading={loading}
-              />
-            </motion.div>
-          </AnimatePresence>
+        <Box sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', px: 2, pb: 2 }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              overflow: 'hidden',
+              backgroundColor: '#ffffff',
+              borderRadius: '24px',
+              border: '1px solid #e0e0e0',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+            }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.18 }}
+                style={{ height: '100%' }}
+              >
+                <Calendar
+                  events={events}
+                  currentView={currentView}
+                  selectedDate={selectedDate}
+                  onViewChange={setCurrentView}
+                  onDateChange={setSelectedDate}
+                  onEventClick={handleEditEvent}
+                  onCreateEvent={handleCreateEvent}
+                  onEventDrop={handleEventDrop}
+                  loading={loading}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </Box>
         </Box>
       </Box>
 

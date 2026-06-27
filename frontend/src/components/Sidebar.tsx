@@ -97,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           width: 256,
           boxSizing: 'border-box',
           backgroundColor: '#ffffff',
-          borderRight: '1px solid #e0e0e0',
+          borderRight: 'none',
           overflowX: 'hidden',
           // Make it sit below the AppBar (64px)
           top: 64,
