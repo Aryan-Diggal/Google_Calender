@@ -446,7 +446,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
           {/* Menus for dropdowns */}
           <Menu anchorEl={colorAnchorEl} open={Boolean(colorAnchorEl)} onClose={() => setColorAnchorEl(null)} PaperProps={{ sx: { p: 1, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' } }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
               {GOOGLE_COLORS.map(c => (
                 <Box key={c} onClick={() => { setColor(c); setColorAnchorEl(null); }} sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: c, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', '&:hover': { transform: 'scale(1.1)' }, transition: 'transform 0.1s' }}>
                   {color === c && <CheckIcon sx={{ color: '#fff', fontSize: 16 }} />}
