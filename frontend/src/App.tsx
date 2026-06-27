@@ -35,6 +35,7 @@ import EventModal from './components/EventModal';
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import EventEditPage from './pages/EventEditPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Event, CalendarView } from './types/Event';
 import { eventService } from './services/api';
@@ -649,6 +650,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          <Route path="/eventedit" element={<ProtectedRoute><EventEditPage /></ProtectedRoute>} />
           <Route path="/*" element={<ProtectedRoute><CalendarApp /></ProtectedRoute>} />
         </Routes>
       </Router>
