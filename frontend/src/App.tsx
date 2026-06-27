@@ -475,22 +475,22 @@ function CalendarApp() {
         >
           <Tooltip title="Keep" placement="left">
             <IconButton sx={{ width: 40, height: 40 }}>
-              <img src="https://www.gstatic.com/companion/icon_assets/keep_2020q4v3_2x.png" alt="Keep" style={{ width: 20, height: 20 }} />
+              <img src="https://www.gstatic.com/images/branding/product/1x/keep_48dp.png" alt="Keep" style={{ width: 20, height: 20 }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="Tasks" placement="left">
             <IconButton sx={{ width: 40, height: 40 }}>
-              <img src="https://www.gstatic.com/companion/icon_assets/tasks_2021_2x.png" alt="Tasks" style={{ width: 20, height: 20 }} />
+              <img src="https://www.gstatic.com/images/branding/product/1x/tasks_48dp.png" alt="Tasks" style={{ width: 20, height: 20 }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="Contacts" placement="left">
             <IconButton sx={{ width: 40, height: 40 }}>
-              <img src="https://www.gstatic.com/companion/icon_assets/contacts_2x.png" alt="Contacts" style={{ width: 20, height: 20 }} />
+              <img src="https://www.gstatic.com/images/branding/product/1x/contacts_48dp.png" alt="Contacts" style={{ width: 20, height: 20 }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="Maps" placement="left">
             <IconButton sx={{ width: 40, height: 40 }}>
-              <img src="https://www.gstatic.com/companion/icon_assets/maps_v2_2x.png" alt="Maps" style={{ width: 20, height: 20 }} />
+              <img src="https://www.gstatic.com/images/branding/product/1x/maps_48dp.png" alt="Maps" style={{ width: 20, height: 20 }} />
             </IconButton>
           </Tooltip>
 
