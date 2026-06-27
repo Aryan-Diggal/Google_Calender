@@ -74,9 +74,9 @@ const MonthView: React.FC<MonthViewProps> = ({
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Day headers */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #e0e0e0', flexShrink: 0 }}>
-        {WEEK_DAYS.map((day) => (
-          <Box key={day} sx={{ py: 1, textAlign: 'center' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', flexShrink: 0 }}>
+        {WEEK_DAYS.map((day, i) => (
+          <Box key={day} sx={{ py: 1, textAlign: 'center', borderRight: i < 6 ? '1px solid #e0e0e0' : 'none' }}>
             <Typography variant="caption" sx={{ color: '#70757a', fontWeight: 500, fontSize: '0.75rem', letterSpacing: '0.05em' }}>
               {day.toUpperCase()}
             </Typography>
@@ -116,30 +116,31 @@ const MonthView: React.FC<MonthViewProps> = ({
                   }}
                 >
                   {/* Day number */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 0.5, position: 'relative' }}>
                     <Box
                       sx={{
-                        width: 28,
+                        minWidth: 28,
                         height: 28,
+                        px: day.getDate() === 1 ? 1 : 0,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        borderRadius: '50%',
+                        borderRadius: '14px',
                         backgroundColor: isCurrentDay ? '#1a73e8' : 'transparent',
-                        color: isCurrentDay ? 'white' : isCurrentMonth ? '#202124' : '#b0b0b0',
-                        fontSize: '0.8125rem',
-                        fontWeight: isCurrentDay ? 700 : 400,
+                        color: isCurrentDay ? 'white' : isCurrentMonth ? '#3c4043' : '#b0b0b0',
+                        fontSize: '0.75rem',
+                        fontWeight: isCurrentDay ? 700 : 500,
                         cursor: 'pointer',
                         '&:hover': { backgroundColor: isCurrentDay ? '#1557b0' : '#f1f3f4' },
                       }}
                     >
-                      {format(day, 'd')}
+                      {day.getDate() === 1 ? format(day, 'd MMM') : format(day, 'd')}
                     </Box>
                     <IconButton
                       className="add-event-btn"
                       size="small"
                       onClick={(e) => { e.stopPropagation(); onCreateEvent(day); }}
-                      sx={{ opacity: 0, transition: 'opacity 0.15s', width: 20, height: 20 }}
+                      sx={{ opacity: 0, transition: 'opacity 0.15s', width: 20, height: 20, position: 'absolute', right: 0 }}
                     >
                       <AddIcon sx={{ fontSize: 14 }} />
                     </IconButton>
