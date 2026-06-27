@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Box, IconButton, Typography, Button, TextField, Checkbox, 
   FormControlLabel, MenuItem, Select, CircularProgress, Menu
@@ -15,7 +15,7 @@ import {
   Check as CheckIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, addMinutes, addDays } from 'date-fns';
 import { eventService } from '../services/api';
 import { useSnackbar } from 'notistack';
@@ -50,7 +50,10 @@ const getCombinedDate = (date: Date, time: Date, isAllDay: boolean = false) => {
 
 const EventEditPage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { enqueueSnackbar } = useSnackbar();
+  
+  const contentEditableRef = useRef<HTMLDivElement>(null);
 
   const getDefaultStart = () => {
     const now = new Date();
@@ -112,6 +115,32 @@ const EventEditPage: React.FC = () => {
     setEndTime(newEndObj);
   };
 
+  useEffect(() => {
+    if (id) {
+      eventService.getEventById(Number(id))
+        .then(event => {
+          setTitle(event.title);
+          setDescription(event.description || '');
+          if (contentEditableRef.current && event.description) {
+            contentEditableRef.current.innerHTML = event.description;
+          }
+          const start = new Date(event.startTime);
+          const end = new Date(event.endTime);
+          setStartDate(start);
+          setStartTime(start);
+          setEndDate(end);
+          setEndTime(end);
+          setAllDay(event.allDay || false);
+          setRecurrence(event.recurrence || 'none');
+          if (event.color) setSelectedColor(event.color);
+        })
+        .catch(err => {
+          enqueueSnackbar('Failed to load event', { variant: 'error' });
+          navigate('/');
+        });
+    }
+  }, [id, navigate, enqueueSnackbar]);
+
   const handleSave = async (forceSave = false) => {
     if (!title.trim()) {
       enqueueSnackbar('Please add a title', { variant: 'error' });
@@ -133,16 +162,24 @@ const EventEditPage: React.FC = () => {
 
     try {
       setIsSaving(true);
-      await eventService.createEvent({
+      
+      const eventData = {
         title: title.trim(),
         description: description.trim() || undefined,
         startTime: start.toISOString(),
         endTime: end.toISOString(),
         location: undefined,
-        color: '#1a73e8',
+        color: selectedColor,
         allDay,
         recurrence,
-      });
+      };
+
+      if (id) {
+        await eventService.updateEvent(Number(id), eventData);
+      } else {
+        await eventService.createEvent(eventData);
+      }
+      
       enqueueSnackbar('Event saved!', { variant: 'success' });
       navigate('/');
     } catch (err: any) {
@@ -372,6 +409,7 @@ const EventEditPage: React.FC = () => {
                   <FormatClear fontSize="small" sx={{ ml: 1, cursor: 'pointer', opacity: 0.5 }} />
                 </Box>
                 <Box
+                  ref={contentEditableRef}
                   contentEditable
                   onInput={(e) => setDescription(e.currentTarget.innerHTML)}
                   suppressContentEditableWarning

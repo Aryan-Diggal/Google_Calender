@@ -672,7 +672,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-          <Route path="/eventedit" element={<ProtectedRoute><EventEditPage /></ProtectedRoute>} />
+          <Route path="/eventedit/:id?" element={<ProtectedRoute><EventEditPage /></ProtectedRoute>} />
           <Route path="/*" element={<ProtectedRoute><CalendarApp /></ProtectedRoute>} />
         </Routes>
       </Router>

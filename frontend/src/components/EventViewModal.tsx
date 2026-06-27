@@ -16,6 +16,7 @@ import {
   MoreVert as MoreVertIcon,
   NotificationsOutlined as NotificationsIcon,
   CalendarTodayOutlined as CalendarIcon,
+  Notes as NotesIcon,
 } from '@mui/icons-material';
 import { format, isSameDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -44,9 +45,11 @@ const EventViewModal: React.FC<EventViewModalProps> = ({
   if (!event) return null;
 
   const handleEdit = () => {
-    // Navigate to full page edit
-    // Note: In a real app we'd pass the event ID in the URL. For this clone we just go to /eventedit
-    navigate('/eventedit');
+    if (event.id) {
+      navigate(`/eventedit/${event.id}`);
+    } else {
+      navigate('/eventedit');
+    }
     onClose();
   };
 
@@ -181,6 +184,18 @@ const EventViewModal: React.FC<EventViewModalProps> = ({
             </Typography>
           </Box>
         </Box>
+
+        {/* Description */}
+        {event.description && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+            <NotesIcon sx={{ color: '#5f6368', fontSize: 20, ml: -0.5 }} />
+            <Typography 
+              component="div" 
+              sx={{ color: '#3c4043', fontSize: '0.875rem', '& p': { margin: 0 } }} 
+              dangerouslySetInnerHTML={{ __html: event.description }} 
+            />
+          </Box>
+        )}
 
         {/* Notifications */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

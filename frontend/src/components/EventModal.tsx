@@ -257,7 +257,11 @@ const EventModal: React.FC<EventModalProps> = ({
   };
 
   const handleMoreOptions = () => {
-    navigate('/eventedit');
+    if (event?.id) {
+      navigate(`/eventedit/${event.id}`);
+    } else {
+      navigate('/eventedit');
+    }
     onClose();
   };
 
