@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import {
   Box, AppBar, Toolbar, Typography, IconButton,
   Avatar, Menu, MenuItem, Divider, Tooltip, Button,
+  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -27,6 +28,7 @@ import {
   subWeeks,
   addDays,
   subDays,
+  isToday,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSnackbar } from 'notistack';
@@ -71,9 +73,45 @@ function CalendarApp() {
   const [eventAnchorEl, setEventAnchorEl] = useState<null | HTMLElement>(null);
   const [defaultStartTime, setDefaultStartTime] = useState<Date | null>(null);
 
+  interface CollisionDialogState {
+    open: boolean;
+    pendingEvent: Event | null;
+    overlaps: Event[];
+    updatePayload: any;
+    originalEvent: Event | null;
+    isCreate: boolean;
+  }
+  const [collisionDialog, setCollisionDialog] = useState<CollisionDialogState>({
+    open: false,
+    pendingEvent: null,
+    overlaps: [],
+    updatePayload: null,
+    originalEvent: null,
+    isCreate: false,
+  });
+  const [isSavingCollision, setIsSavingCollision] = useState(false);
+
   const [draftEvent, setDraftEvent] = useState<Partial<Event> | null>(null);
 
   useEffect(() => { loadEvents(); }, []);
+
+  useEffect(() => {
+    // Dynamic Title
+    const isTodayFlag = isToday(selectedDate);
+    const dateStr = format(selectedDate, 'EEEE, d MMMM yyyy');
+    document.title = `Google Calendar - ${dateStr}${isTodayFlag ? ', today' : ''}`;
+
+    // Dynamic Favicon always shows today's date
+    const dayNum = new Date().getDate();
+    const faviconUrl = `https://www.gstatic.com/images/branding/productlogos/calendar_2026_${dayNum}/v2/png/calendar_2026_${dayNum}_96dp.png`;
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.href = faviconUrl;
+  }, [selectedDate]);
 
   const loadEvents = async () => {
     try {
@@ -132,20 +170,48 @@ function CalendarApp() {
 
   const handleSaveEvent = async (eventData: Event) => {
     try {
-      if (selectedEvent) {
-        await eventService.updateEvent(selectedEvent.id!, eventData);
+      const overlaps = await eventService.getOverlappingEvents(
+        eventData.startTime, 
+        eventData.endTime, 
+        selectedEvent?.id
+      );
+
+      if (overlaps.length > 0) {
+        setCollisionDialog({
+          open: true,
+          pendingEvent: eventData,
+          overlaps,
+          updatePayload: eventData,
+          originalEvent: selectedEvent || null,
+          isCreate: !selectedEvent,
+        });
+        return; // Wait for user confirmation
+      }
+
+      await executeSaveEvent(eventData, !selectedEvent, selectedEvent?.id);
+    } catch (err: any) {
+      enqueueSnackbar(err?.response?.data?.error || 'Failed to check event collision', { variant: 'error' });
+    }
+  };
+
+  const executeSaveEvent = async (payload: any, isCreate: boolean, eventId?: number) => {
+    try {
+      if (!isCreate && eventId) {
+        const updated = await eventService.updateEvent(eventId, payload);
+        setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
         enqueueSnackbar('Event updated!', { variant: 'success' });
       } else {
-        await eventService.createEvent(eventData);
+        const created = await eventService.createEvent(payload);
+        setEvents(prev => [...prev, created]);
         enqueueSnackbar('Event created!', { variant: 'success' });
       }
-      await loadEvents();
       setIsEventModalOpen(false);
       setSelectedEvent(null);
       setEventAnchorEl(null);
       setDraftEvent(null);
     } catch (err: any) {
       enqueueSnackbar(err?.response?.data?.error || 'Failed to save event', { variant: 'error' });
+      throw err;
     }
   };
 
@@ -186,6 +252,20 @@ function CalendarApp() {
       if (updatePayload.description === null) delete updatePayload.description;
       if (updatePayload.color === null) delete updatePayload.color;
       
+      // Check for overlap
+      const overlaps = await eventService.getOverlappingEvents(updatePayload.startTime, updatePayload.endTime, eventId);
+      if (overlaps.length > 0) {
+        setCollisionDialog({
+          open: true,
+          pendingEvent: { ...event, startTime: updatePayload.startTime, endTime: updatePayload.endTime },
+          overlaps,
+          updatePayload,
+          originalEvent: event,
+          isCreate: false,
+        });
+        return; // Wait for user confirmation
+      }
+
       const updated = await eventService.updateEvent(eventId, updatePayload);
       // Sync with definitive server response
       setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
@@ -219,6 +299,20 @@ function CalendarApp() {
       if (updatePayload.description === null) delete updatePayload.description;
       if (updatePayload.color === null) delete updatePayload.color;
 
+      // Check for overlap
+      const overlaps = await eventService.getOverlappingEvents(updatePayload.startTime, updatePayload.endTime, eventId);
+      if (overlaps.length > 0) {
+        setCollisionDialog({
+          open: true,
+          pendingEvent: { ...event, startTime: updatePayload.startTime, endTime: updatePayload.endTime },
+          overlaps,
+          updatePayload,
+          originalEvent: event,
+          isCreate: false,
+        });
+        return; // Wait for user confirmation
+      }
+
       const updated = await eventService.updateEvent(eventId, updatePayload);
       // Sync with definitive server response
       setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
@@ -229,6 +323,36 @@ function CalendarApp() {
       loadEvents(); // Revert on failure
       enqueueSnackbar('Failed to resize event', { variant: 'error' });
     }
+  };
+
+  const handleConfirmCollision = async () => {
+    const { updatePayload, originalEvent, isCreate } = collisionDialog;
+    if (!updatePayload) return;
+    
+    setIsSavingCollision(true);
+    try {
+      if (isCreate || !originalEvent) {
+        await executeSaveEvent(updatePayload, true);
+      } else {
+        // If it was from a drag/resize optimistic update, executeSaveEvent handles the state update already if we pass false. 
+        // Wait, executeSaveEvent closes the modal, which is fine even if it wasn't open.
+        await executeSaveEvent(updatePayload, false, originalEvent.id);
+      }
+    } catch {
+      loadEvents(); // Revert on failure
+    } finally {
+      setIsSavingCollision(false);
+      setCollisionDialog(prev => ({ ...prev, open: false }));
+    }
+  };
+
+  const handleCancelCollision = () => {
+    const { originalEvent } = collisionDialog;
+    if (originalEvent) {
+      // Revert optimistic update
+      setEvents(prev => prev.map(e => e.id === originalEvent.id ? originalEvent : e));
+    }
+    setCollisionDialog(prev => ({ ...prev, open: false }));
   };
 
   const initials = user?.name
@@ -648,6 +772,32 @@ function CalendarApp() {
         event={selectedEvent}
         onDelete={handleDeleteEvent}
       />
+
+      {/* Collision Confirmation Dialog */}
+      <Dialog open={collisionDialog.open} onClose={handleCancelCollision} PaperProps={{ sx: { borderRadius: '12px' } }}>
+        <DialogTitle sx={{ fontWeight: 600 }}>Time Conflict</DialogTitle>
+        <DialogContent sx={{ minWidth: 300 }}>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            This event overlaps with {collisionDialog.overlaps.map(e => e.title || '(No title)').join(', ')}. 
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Are you sure you want to save it here?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={handleCancelCollision} sx={{ color: '#5f6368', textTransform: 'none', fontWeight: 500 }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmCollision} 
+            variant="contained" 
+            disabled={isSavingCollision}
+            sx={{ backgroundColor: '#1a73e8', textTransform: 'none', borderRadius: '20px', boxShadow: 'none' }}
+          >
+            {isSavingCollision ? <CircularProgress size={20} color="inherit" /> : 'Save anyway'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -9,7 +9,7 @@ interface DayViewProps {
   currentDate: Date;
   events: Event[];
   onEventClick: (event: Event, anchor?: HTMLElement) => void;
-  onCreateEvent: (startTime?: Date) => void;
+  onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
   onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
@@ -22,6 +22,7 @@ const DayView: React.FC<DayViewProps> = ({
   events,
   onEventClick,
   onCreateEvent,
+  onEventDrop,
   onEventResize,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -39,10 +40,62 @@ const DayView: React.FC<DayViewProps> = ({
   const [originalEvent, setOriginalEvent] = useState<Event | null>(null);
   const initialYRef = useRef<number>(0);
 
+  // --- Dragging state ---
+  const [draggingEventId, setDraggingEventId] = useState<number | null>(null);
+  const [dragDeltaMins, setDragDeltaMins] = useState<number>(0);
+  const dragDeltaMinsRef = useRef<number>(0);
+
+  const handleDragStart = (e: React.MouseEvent, event: Event) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setDraggingEventId(event.id!);
+    setOriginalEvent(event);
+    setDragDeltaMins(0);
+    dragDeltaMinsRef.current = 0;
+    initialYRef.current = e.clientY;
+  };
+
+  useEffect(() => {
+    if (!draggingEventId) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaY = e.clientY - initialYRef.current;
+      let deltaMins = (deltaY / HOUR_HEIGHT) * 60;
+      deltaMins = Math.round(deltaMins / 15) * 15;
+      dragDeltaMinsRef.current = deltaMins;
+      setDragDeltaMins(deltaMins);
+    };
+
+    const handleMouseUp = async () => {
+      if (originalEvent) {
+        const start = new Date(originalEvent.startTime);
+        const end = new Date(originalEvent.endTime);
+        const diffMins = dragDeltaMinsRef.current;
+        
+        start.setMinutes(start.getMinutes() + diffMins);
+        end.setMinutes(end.getMinutes() + diffMins);
+
+        await onEventDrop(originalEvent.id!, start, end);
+      }
+      setDraggingEventId(null);
+      setOriginalEvent(null);
+      setDragDeltaMins(0);
+      dragDeltaMinsRef.current = 0;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [draggingEventId, originalEvent, onEventDrop]);
+
   const handleResizeStart = (e: React.MouseEvent, event: Event, type: 'top' | 'bottom') => {
     e.stopPropagation();
     e.preventDefault();
-    setResizingEventId(event.id);
+    setResizingEventId(event.id!);
     setResizeType(type);
     setOriginalEvent(event);
     setResizeDeltaMins(0);
@@ -109,7 +162,7 @@ const DayView: React.FC<DayViewProps> = ({
     const minutes = Math.round(((clickY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60 / 15) * 15;
     const startTime = new Date(currentDate);
     startTime.setHours(hours, minutes, 0, 0);
-    onCreateEvent(startTime);
+    onCreateEvent(startTime, e.currentTarget as HTMLElement);
   };
 
   const today = isToday(currentDate);
@@ -292,6 +345,14 @@ const DayView: React.FC<DayViewProps> = ({
               renderHeight = Math.max(renderHeight, 10);
             }
 
+            const isDragging = draggingEventId === pe.id;
+            if (isDragging) {
+              const deltaPx = (dragDeltaMins / 60) * HOUR_HEIGHT;
+              renderTop += deltaPx;
+              renderStart.setMinutes(renderStart.getMinutes() + dragDeltaMins);
+              renderEnd.setMinutes(renderEnd.getMinutes() + dragDeltaMins);
+            }
+
             return (
               <motion.div
                 key={pe.id}
@@ -306,7 +367,7 @@ const DayView: React.FC<DayViewProps> = ({
                   height: renderHeight,
                   width: `calc(${pe.position.width}% - 6px)`,
                   left: `${pe.position.left}%`,
-                  zIndex: isResizing ? 999 : pe.position.zIndex + 1,
+                  zIndex: (isResizing || isDragging) ? 999 : pe.position.zIndex + 1,
                 }}
               >
                 <Tooltip
@@ -315,6 +376,7 @@ const DayView: React.FC<DayViewProps> = ({
                   arrow
                 >
                   <Box
+                    onMouseDown={(e) => handleDragStart(e, pe)}
                     onClick={(e) => { e.stopPropagation(); onEventClick(pe, e.currentTarget); }}
                     sx={{
                       height: '100%',
@@ -323,11 +385,11 @@ const DayView: React.FC<DayViewProps> = ({
                       px: 1.5,
                       py: 0.75,
                       overflow: 'hidden',
-                      cursor: 'pointer',
+                      cursor: (isDragging || isResizing) ? 'grabbing' : 'pointer',
                       boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                       borderLeft: `4px solid ${pe.color ? pe.color + 'aa' : '#1558b0'}`,
                       '&:hover': { filter: 'brightness(0.92)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' },
-                      transition: isResizing ? 'none' : 'all 0.15s',
+                      transition: (isResizing || isDragging) ? 'none' : 'all 0.15s',
                     }}
                   >
                     <Typography sx={{ color: 'white', fontSize: '0.875rem', fontWeight: 700, lineHeight: 1.3, pointerEvents: 'none' }} noWrap>

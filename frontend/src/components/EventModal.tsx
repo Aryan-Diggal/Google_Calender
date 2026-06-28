@@ -287,6 +287,10 @@ const EventModal: React.FC<EventModalProps> = ({
 
   const currentEndObj = getCombinedDate(endDate, endTime);
 
+  const anchorElRect = anchorEl?.getBoundingClientRect();
+  const isRightSide = anchorElRect ? anchorElRect.left > window.innerWidth / 2 : false;
+  const isWideAnchor = anchorElRect ? anchorElRect.width > window.innerWidth * 0.4 : false;
+
   return (
     <Popover
       open={open}
@@ -294,11 +298,11 @@ const EventModal: React.FC<EventModalProps> = ({
       onClose={onClose}
       anchorOrigin={{
         vertical: 'center',
-        horizontal: 'right',
+        horizontal: isWideAnchor ? 'center' : (isRightSide ? 'left' : 'right'),
       }}
       transformOrigin={{
         vertical: 'center',
-        horizontal: 'left',
+        horizontal: isWideAnchor ? 'center' : (isRightSide ? 'right' : 'left'),
       }}
       disableScrollLock={true}
       PaperProps={{
@@ -377,6 +381,7 @@ const EventModal: React.FC<EventModalProps> = ({
                           onChange={(e) => handleStartTimeChange(e.target.value)} 
                           variant="standard" disableUnderline 
                           sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
+                          MenuProps={{ PaperProps: { sx: { maxHeight: 200 } } }}
                         >
                           {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
                         </Select>
@@ -389,6 +394,7 @@ const EventModal: React.FC<EventModalProps> = ({
                           renderValue={(val) => formatTime(new Date(val))}
                           variant="standard" disableUnderline 
                           sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
+                          MenuProps={{ PaperProps: { sx: { maxHeight: 200 } } }}
                         >
                           {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
                         </Select>

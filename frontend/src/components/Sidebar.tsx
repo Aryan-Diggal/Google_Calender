@@ -10,6 +10,9 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Checkbox,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import {
   ChevronLeft,
@@ -20,6 +23,9 @@ import {
   CalendarViewDay,
   FiberManualRecord as DotIcon,
   PeopleAlt as PeopleIcon,
+  KeyboardArrowUp,
+  KeyboardArrowDown,
+  ArrowDropDown,
 } from '@mui/icons-material';
 import {
   format,
@@ -63,6 +69,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDateSelect,
 }) => {
   const [miniMonth, setMiniMonth] = useState(selectedDate);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [createMenuAnchorEl, setCreateMenuAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleCreateMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setCreateMenuAnchorEl(event.currentTarget);
+  };
+  const handleCreateMenuClose = () => {
+    setCreateMenuAnchorEl(null);
+  };
 
   const miniCalDays = (() => {
     const monthStart = startOfMonth(miniMonth);
@@ -98,11 +113,91 @@ const Sidebar: React.FC<SidebarProps> = ({
           boxSizing: 'border-box',
           backgroundColor: '#f8f9fa',
           borderRight: 'none',
-          overflowX: 'hidden',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
           // Make it sit below the AppBar (64px)
           top: 64,
           height: 'calc(100% - 64px)',
           transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1)',
+        },
+      }}
+    >
+      {/* ── Create button — Google Calendar style ── */}
+      <Box sx={{ 
+        px: 1, 
+        pt: 1, 
+        pb: 2, 
+        flexShrink: 0,
+        boxShadow: isScrolled ? '0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15)' : 'none',
+        transition: 'box-shadow 0.2s',
+        zIndex: 2,
+        backgroundColor: '#f8f9fa'
+      }}>
+        <Box
+          id="sidebar-create-btn"
+          onClick={handleCreateMenuOpen}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 1.5,
+            ml: 1,
+            backgroundColor: '#ffffff',
+            border: '1px solid #dadce0',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            width: 'fit-content',
+            minWidth: '130px',
+            boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)',
+            transition: 'box-shadow 0.2s ease, background-color 0.2s',
+            '&:hover': {
+              boxShadow: '0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15)',
+              backgroundColor: '#f8f9fa',
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AddIcon sx={{ color: '#3c4043', fontSize: 24 }} />
+            <Typography sx={{ color: '#3c4043', fontSize: '1rem', fontWeight: 500 }}>
+              Create
+            </Typography>
+          </Box>
+          <ArrowDropDown sx={{ color: '#5f6368', fontSize: 24, ml: 1 }} />
+        </Box>
+        <Menu
+          anchorEl={createMenuAnchorEl}
+          open={Boolean(createMenuAnchorEl)}
+          onClose={handleCreateMenuClose}
+          sx={{ mt: 1 }}
+          PaperProps={{
+            sx: {
+              width: 200,
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
+            }
+          }}
+        >
+          <MenuItem onClick={() => { handleCreateMenuClose(); onCreateEvent(); }} sx={{ py: 1.5, fontSize: '0.875rem' }}>
+            Event
+          </MenuItem>
+          <MenuItem onClick={handleCreateMenuClose} sx={{ py: 1.5, fontSize: '0.875rem' }}>
+            Task
+          </MenuItem>
+          <MenuItem onClick={handleCreateMenuClose} sx={{ py: 1.5, fontSize: '0.875rem' }}>
+            Appointment schedule
+          </MenuItem>
+        </Menu>
+      </Box>
+
+      {/* ── Scrollable Content ── */}
+      <Box 
+        onScroll={(e) => setIsScrolled((e.target as HTMLElement).scrollTop > 0)}
+        sx={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          overflowX: 'hidden',
           '&::-webkit-scrollbar': {
             width: '8px',
             backgroundColor: 'transparent',
@@ -114,41 +209,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           '&:hover::-webkit-scrollbar-thumb': {
             backgroundColor: '#dadce0',
           },
-        },
-      }}
-    >
-      {/* ── Create button — Google Calendar style ── */}
-      <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-        <Box
-          id="sidebar-create-btn"
-          onClick={onCreateEvent}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.25,
-            px: 2,
-            py: 1.25,
-            backgroundColor: '#ffffff',
-            border: '1px solid #dadce0',
-            borderRadius: '16px',
-            cursor: 'pointer',
-            width: 'fit-content',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
-            transition: 'box-shadow 0.2s ease',
-            '&:hover': {
-              boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
-            },
-          }}
-        >
-          <AddIcon sx={{ color: '#3c4043', fontSize: 20 }} />
-          <Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 600, pr: 0.5 }}>
-            Create
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* ── Mini Calendar ── */}
-      <Box sx={{ px: 1.5, pb: 1, pt: 0.5 }}>
+        }}
+      >
+        {/* ── Mini Calendar ── */}
+        <Box sx={{ px: 1.5, pb: 1, pt: 0.5 }}>
         {/* Month nav header */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, pl: 0.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#3c4043', fontSize: '0.8125rem' }}>
@@ -246,56 +310,24 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <Divider sx={{ mx: 1 }} />
 
-      {/* ── Views ── */}
-      <Box sx={{ px: 1, py: 1 }}>
-        <List dense sx={{ py: 0 }}>
-          {viewItems.map(({ view, label, icon }) => (
-            <ListItem key={view} disablePadding>
-              <ListItemButton
-                id={`sidebar-${view}-view`}
-                selected={currentView === view}
-                onClick={() => onViewChange(view)}
-                sx={{
-                  borderRadius: '0 24px 24px 0',
-                  pl: 2,
-                  mr: 1,
-                  mb: 0.25,
-                  minHeight: 40,
-                  '&.Mui-selected': {
-                    backgroundColor: '#e8f0fe',
-                    '&:hover': { backgroundColor: '#d2e3fc' },
-                  },
-                  '&:hover:not(.Mui-selected)': { backgroundColor: '#f1f3f4' },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 36, color: currentView === view ? '#1a73e8' : '#5f6368' }}>
-                  {icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={label}
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: currentView === view ? 600 : 400,
-                    color: currentView === view ? '#1a73e8' : '#3c4043',
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+      {/* ── Booking Pages ── */}
+      <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' } }}>
+        <Typography variant="body2" sx={{ color: '#3c4043', fontWeight: 500, fontSize: '0.875rem' }}>
+          Booking pages
+        </Typography>
+        <AddIcon sx={{ color: '#5f6368', fontSize: 20 }} />
       </Box>
 
-      <Divider sx={{ mx: 1 }} />
-
       {/* ── My Calendars ── */}
-      <Box sx={{ px: 2, py: 1.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+      <Box sx={{ px: 2, pb: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' } }}>
           <Typography
-            variant="caption"
-            sx={{ color: '#3c4043', fontWeight: 600, fontSize: '0.8125rem', letterSpacing: 0 }}
+            variant="body2"
+            sx={{ color: '#3c4043', fontWeight: 500, fontSize: '0.875rem' }}
           >
             My calendars
           </Typography>
+          <KeyboardArrowUp sx={{ color: '#5f6368', fontSize: 20 }} />
         </Box>
         {CALENDAR_COLORS.map(({ label, color }) => (
           <Box
@@ -303,21 +335,23 @@ const Sidebar: React.FC<SidebarProps> = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1.5,
-              py: 0.5,
+              py: 0.25,
               px: 0.5,
               borderRadius: '6px',
               cursor: 'pointer',
               '&:hover': { backgroundColor: '#f1f3f4' },
             }}
           >
-            <Box
+            <Checkbox
+              size="small"
+              defaultChecked
+              disableRipple
               sx={{
-                width: 16,
-                height: 16,
-                borderRadius: '4px',
-                backgroundColor: color,
-                flexShrink: 0,
+                color: color,
+                '&.Mui-checked': { color: color },
+                p: 0.5,
+                mr: 1,
+                '& .MuiSvgIcon-root': { fontSize: 20, borderRadius: '4px' }
               }}
             />
             <Typography variant="body2" sx={{ color: '#3c4043', fontSize: '0.875rem' }}>
@@ -325,6 +359,57 @@ const Sidebar: React.FC<SidebarProps> = ({
             </Typography>
           </Box>
         ))}
+      </Box>
+
+      {/* ── Other Calendars ── */}
+      <Box sx={{ px: 2, pb: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' } }}>
+          <Typography
+            variant="body2"
+            sx={{ color: '#3c4043', fontWeight: 500, fontSize: '0.875rem' }}
+          >
+            Other calendars
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <AddIcon sx={{ color: '#5f6368', fontSize: 20, mr: 1 }} />
+            <KeyboardArrowUp sx={{ color: '#5f6368', fontSize: 20 }} />
+          </Box>
+        </Box>
+        {/* Dummy items for Other calendars */}
+        {['Books [Personal]', 'Chemistry [Personal]', 'Computer Science', 'Holidays in India', 'Mathematics [Personal]'].map((label, idx) => {
+          const colors = ['#3f51b5', '#3f51b5', '#3f51b5', '#0f9d58', '#db4437'];
+          return (
+            <Box
+              key={label}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                py: 0.25,
+                px: 0.5,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                '&:hover': { backgroundColor: '#f1f3f4' },
+              }}
+            >
+              <Checkbox
+                size="small"
+                defaultChecked
+                disableRipple
+                sx={{
+                  color: colors[idx],
+                  '&.Mui-checked': { color: colors[idx] },
+                  p: 0.5,
+                  mr: 1,
+                  '& .MuiSvgIcon-root': { fontSize: 20, borderRadius: '4px' }
+                }}
+              />
+              <Typography variant="body2" sx={{ color: '#3c4043', fontSize: '0.875rem' }}>
+                {label}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Box>
       </Box>
     </Drawer>
   );

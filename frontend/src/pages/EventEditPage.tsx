@@ -229,8 +229,8 @@ const EventEditPage: React.FC = () => {
                 sx: {
                   fontSize: '1.5rem',
                   color: '#3c4043',
-                  '&::before': { borderBottom: '1px solid transparent !important' },
-                  '&:hover::before': { borderBottom: '1px solid #dadce0 !important' },
+                  '&::before': { borderBottom: '1px solid #dadce0 !important' },
+                  '&:hover::before': { borderBottom: '1px solid #3c4043 !important' },
                   '&::after': { borderBottom: '2px solid #1a73e8 !important' },
                 }
               }}
@@ -286,6 +286,7 @@ const EventEditPage: React.FC = () => {
                 variant="standard" disableUnderline 
                 IconComponent={() => null}
                 sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0, paddingRight: '0 !important' } }}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 200 } } }}
               >
                 {startTimeOptions.map((t) => <MenuItem key={t.getTime()} value={formatTime(t)} sx={{ fontSize: '0.875rem' }}>{formatTime(t)}</MenuItem>)}
               </Select>
@@ -299,6 +300,7 @@ const EventEditPage: React.FC = () => {
                 variant="standard" disableUnderline 
                 IconComponent={() => null}
                 sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 2, py: 1, borderRadius: '4px', height: 36, '& .MuiSelect-select': { py: 0, paddingRight: '0 !important' } }}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 200 } } }}
               >
                 {endTimeOptions.map((t) => <MenuItem key={t.toISOString()} value={t.toISOString()} sx={{ fontSize: '0.875rem' }}>{formatTime(t)} {getDurationString(getCombinedDate(startDate, startTime), t)}</MenuItem>)}
               </Select>

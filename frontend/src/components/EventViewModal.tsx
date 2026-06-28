@@ -77,6 +77,10 @@ const EventViewModal: React.FC<EventViewModalProps> = ({
     return `${format(start, 'EEEE, d MMMM, h:mma')} – ${format(end, 'EEEE, d MMMM, h:mma')}`;
   };
 
+  const anchorElRect = anchorEl?.getBoundingClientRect();
+  const isRightSide = anchorElRect ? anchorElRect.left > window.innerWidth / 2 : false;
+  const isWideAnchor = anchorElRect ? anchorElRect.width > window.innerWidth * 0.4 : false;
+
   return (
     <Popover
       open={open}
@@ -84,11 +88,11 @@ const EventViewModal: React.FC<EventViewModalProps> = ({
       onClose={onClose}
       anchorOrigin={{
         vertical: 'center',
-        horizontal: 'right',
+        horizontal: isWideAnchor ? 'center' : (isRightSide ? 'left' : 'right'),
       }}
       transformOrigin={{
         vertical: 'center',
-        horizontal: 'left',
+        horizontal: isWideAnchor ? 'center' : (isRightSide ? 'right' : 'left'),
       }}
       disableScrollLock={true}
       PaperProps={{

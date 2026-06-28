@@ -8,8 +8,8 @@ import { motion } from 'framer-motion';
 interface WeekViewProps {
   currentDate: Date;
   events: Event[];
-  onEventClick: (event: Event, anchor?: HTMLElement) => void;
-  onCreateEvent: (startTime?: Date) => void;
+  onEventClick: (event: Event, anchor: HTMLElement) => void;
+  onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
   onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
   onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
 }
@@ -39,7 +39,7 @@ const WeekView: React.FC<WeekViewProps> = ({
   const handleResizeStart = (e: React.MouseEvent, event: Event, type: 'top' | 'bottom') => {
     e.stopPropagation();
     e.preventDefault();
-    setResizingEventId(event.id);
+    setResizingEventId(event.id!);
     setResizeType(type);
     setOriginalEvent(event);
     setResizeDeltaMins(0);
@@ -99,8 +99,74 @@ const WeekView: React.FC<WeekViewProps> = ({
   // ----------------------
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [draggingEvent, setDraggingEvent] = useState<Event | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // --- Dragging state ---
+  const [draggingEventId, setDraggingEventId] = useState<number | null>(null);
+  const [dragDeltaMins, setDragDeltaMins] = useState<number>(0);
+  const dragDeltaMinsRef = useRef<number>(0);
+  const [dragOverDay, setDragOverDay] = useState<Date | null>(null);
+  const dragOverDayRef = useRef<Date | null>(null);
+
+  const handleDragStart = (e: React.MouseEvent, event: Event, day: Date) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setDraggingEventId(event.id!);
+    setOriginalEvent(event);
+    setDragDeltaMins(0);
+    dragDeltaMinsRef.current = 0;
+    initialYRef.current = e.clientY;
+    setDragOverDay(day);
+    dragOverDayRef.current = day;
+  };
+
+  useEffect(() => {
+    if (!draggingEventId) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaY = e.clientY - initialYRef.current;
+      let deltaMins = (deltaY / HOUR_HEIGHT) * 60;
+      deltaMins = Math.round(deltaMins / 15) * 15;
+      dragDeltaMinsRef.current = deltaMins;
+      setDragDeltaMins(deltaMins);
+    };
+
+    const handleMouseUp = async () => {
+      if (originalEvent && dragOverDayRef.current) {
+        const start = new Date(originalEvent.startTime);
+        const end = new Date(originalEvent.endTime);
+        const diffMins = dragDeltaMinsRef.current;
+        
+        start.setMinutes(start.getMinutes() + diffMins);
+        end.setMinutes(end.getMinutes() + diffMins);
+
+        const origDay = new Date(originalEvent.startTime);
+        origDay.setHours(0,0,0,0);
+        const targetDay = new Date(dragOverDayRef.current);
+        targetDay.setHours(0,0,0,0);
+        const dayDiffMs = targetDay.getTime() - origDay.getTime();
+        
+        const finalStart = new Date(start.getTime() + dayDiffMs);
+        const finalEnd = new Date(end.getTime() + dayDiffMs);
+
+        await onEventDrop(originalEvent.id!, finalStart, finalEnd);
+      }
+      setDraggingEventId(null);
+      setOriginalEvent(null);
+      setDragDeltaMins(0);
+      dragDeltaMinsRef.current = 0;
+      setDragOverDay(null);
+      dragOverDayRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [draggingEventId, originalEvent, onEventDrop]);
+  // ----------------------
 
   const getEventsForDay = (day: Date): Event[] =>
     events.filter((e) => {
@@ -134,7 +200,7 @@ const WeekView: React.FC<WeekViewProps> = ({
     const minutes = Math.round(((clickY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60 / 15) * 15;
     const startTime = new Date(day);
     startTime.setHours(hours, minutes, 0, 0);
-    onCreateEvent(startTime);
+    onCreateEvent(startTime, e.currentTarget as HTMLElement);
   };
 
   return (
@@ -267,9 +333,16 @@ const WeekView: React.FC<WeekViewProps> = ({
                 position: 'relative',
                 height: HOUR_HEIGHT * 24,
                 cursor: 'crosshair',
+                backgroundColor: dragOverDay && isSameDay(day, dragOverDay) ? '#e8f0fe' : 'transparent',
                 '&:hover': { backgroundColor: 'rgba(26,115,232,0.01)' },
               }}
               onClick={(e) => handleColumnClick(e, day)}
+              onMouseEnter={() => {
+                if (draggingEventId) {
+                  setDragOverDay(day);
+                  dragOverDayRef.current = day;
+                }
+              }}
             >
               {/* Hour lines */}
               {HOURS.map((hour) => (
@@ -338,6 +411,14 @@ const WeekView: React.FC<WeekViewProps> = ({
                   }
                   renderHeight = Math.max(renderHeight, 10);
                 }
+                
+                const isDragging = draggingEventId === pe.id;
+                if (isDragging) {
+                  const deltaPx = (dragDeltaMins / 60) * HOUR_HEIGHT;
+                  renderTop += deltaPx;
+                  renderStart.setMinutes(renderStart.getMinutes() + dragDeltaMins);
+                  renderEnd.setMinutes(renderEnd.getMinutes() + dragDeltaMins);
+                }
 
                 return (
                   <motion.div
@@ -362,6 +443,7 @@ const WeekView: React.FC<WeekViewProps> = ({
                       arrow
                     >
                       <Box
+                        onMouseDown={(e) => handleDragStart(e, pe, day)}
                         onClick={(e) => { e.stopPropagation(); onEventClick(pe, e.currentTarget); }}
                         sx={{
                           height: '100%',
@@ -370,11 +452,12 @@ const WeekView: React.FC<WeekViewProps> = ({
                           px: 0.75,
                           py: 0.5,
                           overflow: 'hidden',
-                          cursor: 'pointer',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                          cursor: (isDragging || isResizing) ? 'grabbing' : 'pointer',
+                          boxShadow: (isDragging || isResizing) ? '0 4px 6px rgba(0,0,0,0.25)' : '0 1px 3px rgba(0,0,0,0.2)',
                           borderLeft: `3px solid ${pe.color ? pe.color + 'cc' : '#1558b0'}`,
                           '&:hover': { filter: 'brightness(0.92)', boxShadow: '0 2px 6px rgba(0,0,0,0.3)' },
-                          transition: isResizing ? 'none' : 'filter 0.15s, box-shadow 0.15s',
+                          transition: (isResizing || isDragging) ? 'none' : 'filter 0.15s, box-shadow 0.15s',
+                          opacity: (isDragging && dragOverDay && !isSameDay(day, dragOverDay)) ? 0.5 : 1,
                         }}
                       >
                         <Typography sx={{ color: 'white', fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.2, pointerEvents: 'none' }} noWrap>
