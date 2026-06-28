@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format, addHours, isSameDay, addMinutes, differenceInMinutes, parse, startOfDay } from 'date-fns';
 import { Event } from '../types/Event';
 import { eventService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface EventModalProps {
@@ -71,6 +72,7 @@ const EventModal: React.FC<EventModalProps> = ({
   open, anchorEl, onClose, onSave, onDelete, event, defaultStartTime, onChange
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const getDefaultStart = () => {
     const now = new Date();
@@ -459,7 +461,7 @@ const EventModal: React.FC<EventModalProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, cursor: 'pointer', '&:hover': { backgroundColor: '#f1f3f4' }, px: 1, py: 0.5, borderRadius: '4px', ml: -1 }} onClick={() => setShowAdvanced(true)}>
               <CalendarIcon sx={{ color: '#5f6368', mt: 0.5 }} />
               <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>Aryan Diggal</Typography><Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} /></Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Typography sx={{ color: '#3c4043', fontSize: '0.875rem', fontWeight: 500 }}>{user?.name || 'My Calendar'}</Typography><Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: color }} /></Box>
                 <Typography sx={{ color: '#5f6368', fontSize: '0.75rem', mt: 0.5 }}>Free · Default visibility · Notify the day before at 5pm</Typography>
               </Box>
             </Box>
@@ -470,7 +472,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 <CalendarIcon sx={{ color: '#5f6368' }} />
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Box onClick={(e) => setCalendarAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f1f3f4', px: 1.5, py: 0.75, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } }}>
-                    <Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>Aryan Diggal</Typography>
+                    <Typography sx={{ fontSize: '0.875rem', color: '#3c4043' }}>{user?.name || 'My Calendar'}</Typography>
                     <ArrowDropDownIcon sx={{ color: '#5f6368' }} />
                   </Box>
                   <Box onClick={(e) => setColorAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#f1f3f4', px: 1.5, py: 0.75, borderRadius: '4px', cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } }}>
@@ -526,7 +528,7 @@ const EventModal: React.FC<EventModalProps> = ({
           </Menu>
 
           <Menu anchorEl={calendarAnchorEl} open={Boolean(calendarAnchorEl)} onClose={() => setCalendarAnchorEl(null)} PaperProps={{ sx: { width: 220, borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' } }}>
-            <MenuItem onClick={() => setCalendarAnchorEl(null)} sx={{ fontSize: '0.875rem', py: 1 }}>Aryan Diggal</MenuItem>
+            <MenuItem onClick={() => setCalendarAnchorEl(null)} sx={{ fontSize: '0.875rem', py: 1 }}>{user?.name || 'My Calendar'}</MenuItem>
             <MenuItem onClick={() => setCalendarAnchorEl(null)} sx={{ fontSize: '0.875rem', py: 1 }}>Assignments Now</MenuItem>
           </Menu>
           

@@ -21,6 +21,7 @@ import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, ad
 import { eventService } from '../services/api';
 import { useSnackbar } from 'notistack';
 import { Event } from '../types/Event';
+import { useAuth } from '../context/AuthContext';
 
 const generateStartTimeOptions = () => {
   const options = [];
@@ -55,6 +56,7 @@ const EventEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
   
   const contentEditableRef = useRef<HTMLDivElement>(null);
 
@@ -396,7 +398,7 @@ const EventEditPage: React.FC = () => {
               <CalendarIcon sx={{ color: '#5f6368' }} />
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Select size="small" value="aryan" sx={{ height: 32, fontSize: '0.875rem', backgroundColor: '#f1f3f4', '& fieldset': { border: 'none' } }}>
-                  <MenuItem value="aryan">Aryan Diggal</MenuItem>
+                  <MenuItem value="aryan">{user?.name || 'My Calendar'}</MenuItem>
                 </Select>
                 <Box onClick={(e) => setColorAnchorEl(e.currentTarget)} sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f3f4', borderRadius: '4px', px: 1, gap: 0.5, cursor: 'pointer', '&:hover': { backgroundColor: '#e8eaed' } }}>
                   <Box sx={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: selectedColor }} />
