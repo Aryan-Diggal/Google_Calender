@@ -27,6 +27,12 @@ model Event {
   color       String   @default("#1a73e8")
   allDay      Boolean  @default(false)
   recurrence  String   @default("none")
+  
+  parentEventId Int?
+  originalStartTime DateTime?
+  parentEvent Event?  @relation("EventExceptions", fields: [parentEventId], references: [id])
+  exceptions  Event[] @relation("EventExceptions")
+
   userId      Int
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())

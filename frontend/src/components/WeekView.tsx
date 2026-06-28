@@ -10,8 +10,8 @@ interface WeekViewProps {
   events: Event[];
   onEventClick: (event: Event, anchor: HTMLElement) => void;
   onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
-  onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
-  onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventDrop: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventResize: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
 const HOUR_HEIGHT = 40;
@@ -29,7 +29,7 @@ const WeekView: React.FC<WeekViewProps> = ({
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   // --- Resizing state ---
-  const [resizingEventId, setResizingEventId] = useState<number | null>(null);
+  const [resizingEventId, setResizingEventId] = useState<number | string | null>(null);
   const [resizeType, setResizeType] = useState<'top' | 'bottom' | null>(null);
   const [resizeDeltaMins, setResizeDeltaMins] = useState<number>(0);
   const resizeDeltaMinsRef = useRef<number>(0);
@@ -101,7 +101,7 @@ const WeekView: React.FC<WeekViewProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // --- Dragging state ---
-  const [draggingEventId, setDraggingEventId] = useState<number | null>(null);
+  const [draggingEventId, setDraggingEventId] = useState<number | string | null>(null);
   const [dragDeltaMins, setDragDeltaMins] = useState<number>(0);
   const dragDeltaMinsRef = useRef<number>(0);
   const [dragOverDay, setDragOverDay] = useState<Date | null>(null);

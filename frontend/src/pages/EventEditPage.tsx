@@ -17,11 +17,12 @@ import {
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, addMinutes, addDays } from 'date-fns';
+import { format, addHours, isSameDay, differenceInMinutes, parse, startOfDay, endOfDay, addMinutes, addDays } from 'date-fns';
 import { eventService } from '../services/api';
 import { useSnackbar } from 'notistack';
 import { Event } from '../types/Event';
 import { useAuth } from '../context/AuthContext';
+import { RecurringEditDialog } from '../components/RecurringEditDialog';
 
 const generateStartTimeOptions = () => {
   const options = [];
@@ -69,12 +70,14 @@ const EventEditPage: React.FC = () => {
 
   const [title, setTitle] = useState(location.state?.title || '');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState<Date>(location.state?.startDate ? new Date(location.state.startDate) : getDefaultStart());
-  const [endDate, setEndDate] = useState<Date>(location.state?.endDate ? new Date(location.state.endDate) : getDefaultEnd());
+  const [startDate, setStartDate] = useState<Date>(location.state?.startDate || location.state?.startTime ? new Date(location.state.startDate || location.state.startTime) : getDefaultStart());
+  const [endDate, setEndDate] = useState<Date>(location.state?.endDate || location.state?.endTime ? new Date(location.state.endDate || location.state.endTime) : getDefaultEnd());
   const [startTime, setStartTime] = useState<Date>(location.state?.startTime ? new Date(location.state.startTime) : getDefaultStart());
   const [endTime, setEndTime] = useState<Date>(location.state?.endTime ? new Date(location.state.endTime) : getDefaultEnd());
   const [allDay, setAllDay] = useState(location.state?.allDay || false);
-  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
+  const [recurrence, setRecurrence] = useState<string>('none');
+  const [originalEvent, setOriginalEvent] = useState<Event | null>(null);
+  const [showRecurrenceDialog, setShowRecurrenceDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const [checkingOverlap, setCheckingOverlap] = useState(false);
@@ -95,17 +98,22 @@ const EventEditPage: React.FC = () => {
     const startObj = getCombinedDate(startDate, startTime);
 
     if (isSameDay(startDate, endDate)) {
-      for (let i = 1; i <= 24 * 4; i++) {
-        options.push(addMinutes(startObj, i * 15));
+      let currentTime = addMinutes(startObj, 15);
+      const endOfDayTime = endOfDay(startObj);
+      while (currentTime <= endOfDayTime) {
+        options.push(currentTime);
+        currentTime = addMinutes(currentTime, 15);
       }
     } else {
-      const endStartOfDay = startOfDay(endDate);
-      for (let i = 0; i < 24 * 4; i++) {
-        options.push(addMinutes(endStartOfDay, i * 15));
+      let currentTime = startOfDay(endDate);
+      const endOfDayTime = endOfDay(endDate);
+      while (currentTime <= endOfDayTime) {
+        options.push(currentTime);
+        currentTime = addMinutes(currentTime, 15);
       }
     }
     return options;
-  }, [startDate, startTime, endDate]);
+  }, [startDate, endDate, startTime]);
 
   useEffect(() => {
     setOverlapChecked(false);
@@ -130,22 +138,27 @@ const EventEditPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (id) {
-      eventService.getEventById(Number(id))
+    if (id && id !== 'new') {
+      const parsedId = Number(id.toString().split('_')[0]);
+      const isOccurrence = id.toString().includes('_');
+      eventService.getEventById(parsedId)
         .then(event => {
           setTitle(event.title);
           setDescription(event.description || '');
           if (contentEditableRef.current && event.description) {
             contentEditableRef.current.innerHTML = event.description;
           }
-          const start = new Date(event.startTime);
-          const end = new Date(event.endTime);
-          setStartDate(start);
-          setStartTime(start);
-          setEndDate(end);
-          setEndTime(end);
+          if (!isOccurrence) {
+            const start = new Date(event.startTime);
+            const end = new Date(event.endTime);
+            setStartDate(start);
+            setStartTime(start);
+            setEndDate(end);
+            setEndTime(end);
+          }
           setAllDay(event.allDay || false);
           setRecurrence(event.recurrence || 'none');
+          setOriginalEvent(event);
           if (event.color) setSelectedColor(event.color);
         })
         .catch(err => {
@@ -155,46 +168,41 @@ const EventEditPage: React.FC = () => {
     }
   }, [id, navigate, enqueueSnackbar]);
 
-  const handleSave = async (forceSave = false) => {
-    if (!title.trim()) {
-      enqueueSnackbar('Please add a title', { variant: 'error' });
-      return;
-    }
-
-    const start = getCombinedDate(startDate, startTime, allDay);
-    let end = getCombinedDate(endDate, endTime, allDay);
-    if (allDay) end = addHours(startOfDay(endDate), 23);
-
-    if (!forceSave && !overlapChecked) {
-      setCheckingOverlap(true);
-      let overlaps = await eventService.getOverlappingEvents(start.toISOString(), end.toISOString());
-      if (id) {
-        overlaps = overlaps.filter(o => o.id !== Number(id));
-      }
-      setCheckingOverlap(false);
-      setOverlapChecked(true);
-      if (overlaps.length > 0) {
-        setOverlappingEvents(overlaps);
-        return; // wait for user to click Save anyway
-      }
-    }
-
+  const executeSave = async (updateScope?: 'this' | 'following' | 'all') => {
     try {
       setIsSaving(true);
+      let start = getCombinedDate(startDate, startTime, allDay);
+      let end = getCombinedDate(endDate, endTime, allDay);
       
-      const eventData = {
-        title: title.trim(),
+      if (allDay) {
+        end = addHours(startOfDay(endDate), 23); 
+      }
+
+      const eventData: any = {
+        title: title.trim() || '(No title)',
         description: description.trim() || undefined,
         startTime: start.toISOString(),
         endTime: end.toISOString(),
-        location: undefined,
         color: selectedColor,
         allDay,
         recurrence,
+        updateScope,
       };
 
-      if (id) {
-        await eventService.updateEvent(Number(id), eventData);
+      if (updateScope === 'this' || updateScope === 'following') {
+        const timestamp = id?.toString().split('_')[1];
+        if (timestamp) {
+          eventData.originalStartTime = new Date(Number(timestamp)).toISOString();
+        } else if (location.state?.startTime) {
+          eventData.originalStartTime = new Date(location.state.startTime).toISOString();
+        } else {
+          eventData.originalStartTime = originalEvent?.startTime;
+        }
+      }
+      
+      if (id && id !== 'new') {
+        const parsedId = Number(id.toString().split('_')[0]);
+        await eventService.updateEvent(parsedId, eventData);
       } else {
         await eventService.createEvent(eventData);
       }
@@ -206,6 +214,35 @@ const EventEditPage: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSave = async (forceSave = false) => {
+    let start = getCombinedDate(startDate, startTime, allDay);
+    let end = getCombinedDate(endDate, endTime, allDay);
+    
+    if (allDay) {
+      end = addHours(startOfDay(endDate), 23); 
+    }
+
+    if (!forceSave) {
+      const parsedId = id && id !== 'new' ? Number(id.toString().split('_')[0]) : undefined;
+      const overlaps = await eventService.getOverlappingEvents(start.toISOString(), end.toISOString(), parsedId);
+      if (overlaps.length > 0) {
+        setOverlappingEvents(overlaps);
+        setOverlapChecked(true);
+        return;
+      }
+    }
+
+    setOverlappingEvents([]);
+    setOverlapChecked(false);
+
+    if (id && id !== 'new' && originalEvent?.recurrence !== 'none') {
+      setShowRecurrenceDialog(true);
+      return;
+    }
+
+    await executeSave();
   };
 
   const currentEndObj = getCombinedDate(endDate, endTime);
@@ -345,9 +382,9 @@ const EventEditPage: React.FC = () => {
             sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}
           >
             <MenuItem value="none" sx={{ fontSize: '0.875rem' }}>Does not repeat</MenuItem>
-            <MenuItem value="daily" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
-            <MenuItem value="weekly" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
-            <MenuItem value="monthly" sx={{ fontSize: '0.875rem' }}>Monthly on the {Math.ceil(startDate.getDate()/7)} {format(startDate, 'EEEE')}</MenuItem>
+            <MenuItem value="FREQ=DAILY" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
+            <MenuItem value="FREQ=WEEKLY" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
+            <MenuItem value="FREQ=MONTHLY" sx={{ fontSize: '0.875rem' }}>Monthly on the {Math.ceil(startDate.getDate()/7)} {format(startDate, 'EEEE')}</MenuItem>
           </Select>
         </Box>
       </Box>
@@ -485,6 +522,11 @@ const EventEditPage: React.FC = () => {
         </Box>
 
       </Box>
+      <RecurringEditDialog
+        open={showRecurrenceDialog}
+        onClose={() => setShowRecurrenceDialog(false)}
+        onSave={(scope) => executeSave(scope)}
+      />
     </Box>
   );
 };

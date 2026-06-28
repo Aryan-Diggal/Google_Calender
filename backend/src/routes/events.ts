@@ -4,6 +4,7 @@ import {
   getEventById,
   getEventsByRange,
   getOverlappingEvents,
+  getExpandedEvents,
   createEvent,
   updateEvent,
   deleteEvent,
@@ -18,6 +19,7 @@ router.use(authenticateToken);
 // Specific routes first to avoid /:id conflicts
 router.get('/range', getEventsByRange);
 router.get('/overlapping', getOverlappingEvents);
+router.get('/expanded', getExpandedEvents);
 
 // CRUD routes
 router.get('/', getAllEvents);

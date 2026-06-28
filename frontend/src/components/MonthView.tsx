@@ -21,8 +21,8 @@ interface MonthViewProps {
   events: Event[];
   onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
-  onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
-  onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventDrop: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventResize: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
 const MAX_VISIBLE_EVENTS = 3;

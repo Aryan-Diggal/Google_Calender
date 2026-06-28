@@ -22,8 +22,8 @@ interface CalendarProps {
   onDateChange: (date: Date) => void;
   onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
-  onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
-  onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventDrop: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventResize: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
   loading: boolean;
 }
 

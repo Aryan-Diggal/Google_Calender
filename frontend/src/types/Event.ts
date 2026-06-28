@@ -1,5 +1,6 @@
 export interface Event {
-  id?: number;
+  id?: number | string;
+  originalId?: number;
   title: string;
   description?: string;
   startTime: string;
@@ -7,7 +8,10 @@ export interface Event {
   location?: string;
   color?: string;
   allDay?: boolean;
-  recurrence?: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurrence?: string;
+  parentEventId?: number;
+  originalStartTime?: string;
+  updateScope?: 'this' | 'following' | 'all';
   userId?: number;
 }
 
@@ -19,7 +23,10 @@ export interface EventFormData {
   location: string;
   color: string;
   allDay: boolean;
-  recurrence: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurrence: string;
+  parentEventId?: number;
+  originalStartTime?: string;
+  updateScope?: 'this' | 'following' | 'all';
 }
 
 export type CalendarView = 'month' | 'week' | 'day';

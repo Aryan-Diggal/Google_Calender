@@ -39,10 +39,13 @@ export const eventService = {
   },
 
   getEventsByDateRange: async (startDate: string, endDate: string): Promise<Event[]> => {
-    const response = await api.get('/events/range', {
-      params: { startDate, endDate },
-    });
-    return response.data;
+    const res = await api.get(`/events/range?startDate=${startDate}&endDate=${endDate}`);
+    return res.data;
+  },
+  
+  getExpandedEvents: async (startDate: string, endDate: string): Promise<Event[]> => {
+    const res = await api.get(`/events/expanded?startDate=${startDate}&endDate=${endDate}`);
+    return res.data;
   },
 
   getEventById: async (id: number): Promise<Event> => {
@@ -67,8 +70,9 @@ export const eventService = {
     return response.data;
   },
 
-  deleteEvent: async (id: number): Promise<void> => {
-    await api.delete(`/events/${id}`);
+  deleteEvent: async (id: number | string, scope?: string, originalStartTime?: string): Promise<void> => {
+    const masterId = id.toString().split('_')[0];
+    await api.delete(`/events/${masterId}`, { params: { scope, originalStartTime } });
   },
 };
 

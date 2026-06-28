@@ -108,7 +108,7 @@ const EventModal: React.FC<EventModalProps> = ({
   const isMonthViewClick = defaultStartTime ? (defaultStartTime.getHours() === 0 && defaultStartTime.getMinutes() === 0) : false;
   const [allDay, setAllDay] = useState(isMonthViewClick);
   const [showTimeInputs, setShowTimeInputs] = useState(!isMonthViewClick);
-  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
+  const [recurrence, setRecurrence] = useState<string>('none');
   const [isSaving, setIsSaving] = useState(false);
   const [checkingOverlap, setCheckingOverlap] = useState(false);
   const [overlappingEvents, setOverlappingEvents] = useState<Event[]>([]);
@@ -220,7 +220,8 @@ const EventModal: React.FC<EventModalProps> = ({
   const checkOverlap = async (startISO: string, endISO: string): Promise<Event[]> => {
     try {
       setCheckingOverlap(true);
-      const overlaps = await eventService.getOverlappingEvents(startISO, endISO, event?.id);
+      const excludeId = event?.id ? Number(event.id.toString().split('_')[0]) : undefined;
+      const overlaps = await eventService.getOverlappingEvents(startISO, endISO, excludeId);
       setOverlappingEvents(overlaps);
       setOverlapChecked(true);
       if (overlaps.length > 0) {
@@ -352,11 +353,6 @@ const EventModal: React.FC<EventModalProps> = ({
                     <Typography sx={{ fontSize: '0.875rem', color: '#3c4043', pt: 0.5 }}>
                       {format(startDate, 'EEEE, d MMMM')} – {format(endDate, 'EEEE, d MMMM')}
                     </Typography>
-                    <Select value={recurrence} onChange={(e) => setRecurrence(e.target.value as any)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', color: '#5f6368', height: 24, '& .MuiSelect-select': { py: 0, pl: 0 } }}>
-                      <MenuItem value="none" sx={{ fontSize: '0.875rem' }}>Doesn't repeat</MenuItem>
-                      <MenuItem value="daily" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
-                      <MenuItem value="weekly" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
-                    </Select>
                   </Box>
                   <Button 
                     variant="outlined" 
@@ -426,9 +422,9 @@ const EventModal: React.FC<EventModalProps> = ({
                   <Box>
                     <Select value={recurrence} onChange={(e) => setRecurrence(e.target.value as any)} variant="standard" disableUnderline sx={{ fontSize: '0.875rem', backgroundColor: '#f1f3f4', px: 1, py: 0.5, borderRadius: '4px', height: 32, '& .MuiSelect-select': { py: 0 } }}>
                       <MenuItem value="none" sx={{ fontSize: '0.875rem' }}>Does not repeat</MenuItem>
-                      <MenuItem value="daily" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
-                      <MenuItem value="weekly" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
-                      <MenuItem value="monthly" sx={{ fontSize: '0.875rem' }}>Monthly on the {Math.ceil(startDate.getDate()/7)} {format(startDate, 'EEEE')}</MenuItem>
+                      <MenuItem value="FREQ=DAILY" sx={{ fontSize: '0.875rem' }}>Daily</MenuItem>
+                      <MenuItem value="FREQ=WEEKLY" sx={{ fontSize: '0.875rem' }}>Weekly on {format(startDate, 'EEEE')}</MenuItem>
+                      <MenuItem value="FREQ=MONTHLY" sx={{ fontSize: '0.875rem' }}>Monthly on the {Math.ceil(startDate.getDate()/7)} {format(startDate, 'EEEE')}</MenuItem>
                     </Select>
                   </Box>
                 </>

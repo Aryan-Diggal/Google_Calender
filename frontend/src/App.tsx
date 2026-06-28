@@ -80,6 +80,7 @@ function CalendarApp() {
     updatePayload: any;
     originalEvent: Event | null;
     isCreate: boolean;
+    masterId?: number;
   }
   const [collisionDialog, setCollisionDialog] = useState<CollisionDialogState>({
     open: false,
@@ -116,7 +117,9 @@ function CalendarApp() {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      setEvents(await eventService.getAllEvents());
+      const start = new Date(selectedDate.getFullYear() - 2, 0, 1).toISOString();
+      const end = new Date(selectedDate.getFullYear() + 2, 11, 31).toISOString();
+      setEvents(await eventService.getExpandedEvents(start, end));
     } catch {
       enqueueSnackbar('Failed to load events', { variant: 'error' });
     } finally {
@@ -170,10 +173,11 @@ function CalendarApp() {
 
   const handleSaveEvent = async (eventData: Event) => {
     try {
+      const excludeId = selectedEvent?.id ? Number(selectedEvent.id.toString().split('_')[0]) : undefined;
       const overlaps = await eventService.getOverlappingEvents(
         eventData.startTime, 
         eventData.endTime, 
-        selectedEvent?.id
+        excludeId
       );
 
       if (overlaps.length > 0) {
@@ -188,7 +192,8 @@ function CalendarApp() {
         return; // Wait for user confirmation
       }
 
-      await executeSaveEvent(eventData, !selectedEvent, selectedEvent?.id);
+      const saveId = selectedEvent?.id ? Number(selectedEvent.id.toString().split('_')[0]) : undefined;
+      await executeSaveEvent(eventData, !selectedEvent, saveId);
     } catch (err: any) {
       enqueueSnackbar(err?.response?.data?.error || 'Failed to check event collision', { variant: 'error' });
     }
@@ -197,12 +202,12 @@ function CalendarApp() {
   const executeSaveEvent = async (payload: any, isCreate: boolean, eventId?: number) => {
     try {
       if (!isCreate && eventId) {
-        const updated = await eventService.updateEvent(eventId, payload);
-        setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
+        await eventService.updateEvent(eventId, payload);
+        await loadEvents();
         enqueueSnackbar('Event updated!', { variant: 'success' });
       } else {
-        const created = await eventService.createEvent(payload);
-        setEvents(prev => [...prev, created]);
+        await eventService.createEvent(payload);
+        await loadEvents();
         enqueueSnackbar('Event created!', { variant: 'success' });
       }
       setIsEventModalOpen(false);
@@ -215,9 +220,9 @@ function CalendarApp() {
     }
   };
 
-  const handleDeleteEvent = async (eventId: number) => {
+  const handleDeleteEvent = async (eventId: number | string, scope?: string, originalStartTime?: string) => {
     try {
-      await eventService.deleteEvent(eventId);
+      await eventService.deleteEvent(eventId, scope, originalStartTime);
       enqueueSnackbar('Event deleted', { variant: 'info' });
       await loadEvents();
       setIsEventModalOpen(false);
@@ -230,7 +235,7 @@ function CalendarApp() {
     }
   };
 
-  const handleEventDrop = async (eventId: number, newStartTime: Date, newEndTime: Date) => {
+  const handleEventDrop = async (eventId: number | string, newStartTime: Date, newEndTime: Date) => {
     try {
       const event = events.find(e => e.id === eventId);
       if (!event) return;
@@ -242,18 +247,27 @@ function CalendarApp() {
         endTime: newEndTime.toISOString()
       } : e));
 
+      const isOccurrence = typeof eventId === 'string' && eventId.includes('_');
+      const parsedId = isOccurrence ? Number(eventId.toString().split('_')[0]) : (eventId as number);
+
       const updatePayload: any = {
         ...event,
         startTime: newStartTime.toISOString(),
         endTime: newEndTime.toISOString(),
       };
+      
+      if (isOccurrence) {
+        updatePayload.updateScope = 'this';
+        updatePayload.originalStartTime = new Date(Number(eventId.toString().split('_')[1])).toISOString();
+      }
+
       // Zod doesn't accept null for optional strings
       if (updatePayload.location === null) delete updatePayload.location;
       if (updatePayload.description === null) delete updatePayload.description;
       if (updatePayload.color === null) delete updatePayload.color;
       
       // Check for overlap
-      const overlaps = await eventService.getOverlappingEvents(updatePayload.startTime, updatePayload.endTime, eventId);
+      const overlaps = await eventService.getOverlappingEvents(updatePayload.startTime, updatePayload.endTime, parsedId);
       if (overlaps.length > 0) {
         setCollisionDialog({
           open: true,
@@ -262,13 +276,14 @@ function CalendarApp() {
           updatePayload,
           originalEvent: event,
           isCreate: false,
+          masterId: parsedId,
         });
         return; // Wait for user confirmation
       }
 
-      const updated = await eventService.updateEvent(eventId, updatePayload);
+      await eventService.updateEvent(parsedId, updatePayload);
       // Sync with definitive server response
-      setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
+      await loadEvents();
 
       enqueueSnackbar('Event moved!', { variant: 'success' });
     } catch {
@@ -277,7 +292,7 @@ function CalendarApp() {
     }
   };
 
-  const handleEventResize = async (eventId: number, newStartTime: Date, newEndTime: Date) => {
+  const handleEventResize = async (eventId: number | string, newStartTime: Date, newEndTime: Date) => {
     try {
       const event = events.find(e => e.id === eventId);
       if (!event) return;
@@ -289,18 +304,27 @@ function CalendarApp() {
         endTime: newEndTime.toISOString()
       } : e));
 
+      const isOccurrence = typeof eventId === 'string' && eventId.includes('_');
+      const parsedId = isOccurrence ? Number(eventId.toString().split('_')[0]) : (eventId as number);
+
       const updatePayload: any = {
         ...event,
         startTime: newStartTime.toISOString(),
         endTime: newEndTime.toISOString(),
       };
+      
+      if (isOccurrence) {
+        updatePayload.updateScope = 'this';
+        updatePayload.originalStartTime = new Date(Number(eventId.toString().split('_')[1])).toISOString();
+      }
+
       // Zod doesn't accept null for optional strings
       if (updatePayload.location === null) delete updatePayload.location;
       if (updatePayload.description === null) delete updatePayload.description;
       if (updatePayload.color === null) delete updatePayload.color;
-
+      
       // Check for overlap
-      const overlaps = await eventService.getOverlappingEvents(updatePayload.startTime, updatePayload.endTime, eventId);
+      const overlaps = await eventService.getOverlappingEvents(updatePayload.startTime, updatePayload.endTime, parsedId);
       if (overlaps.length > 0) {
         setCollisionDialog({
           open: true,
@@ -309,13 +333,14 @@ function CalendarApp() {
           updatePayload,
           originalEvent: event,
           isCreate: false,
+          masterId: parsedId,
         });
         return; // Wait for user confirmation
       }
 
-      const updated = await eventService.updateEvent(eventId, updatePayload);
+      await eventService.updateEvent(parsedId, updatePayload);
       // Sync with definitive server response
-      setEvents(prev => prev.map(e => e.id === eventId ? updated : e));
+      await loadEvents();
 
       // Optional: No snackbar for resizing so it doesn't get annoying, but we'll leave it for now
       enqueueSnackbar('Event updated', { variant: 'success' });
@@ -336,7 +361,8 @@ function CalendarApp() {
       } else {
         // If it was from a drag/resize optimistic update, executeSaveEvent handles the state update already if we pass false. 
         // Wait, executeSaveEvent closes the modal, which is fine even if it wasn't open.
-        await executeSaveEvent(updatePayload, false, originalEvent.id);
+        const masterId = collisionDialog.masterId ?? (originalEvent.id ? Number(originalEvent.id.toString().split('_')[0]) : undefined);
+        await executeSaveEvent(updatePayload, false, masterId);
       }
     } catch {
       loadEvents(); // Revert on failure

@@ -10,8 +10,8 @@ interface DayViewProps {
   events: Event[];
   onEventClick: (event: Event, anchor?: HTMLElement) => void;
   onCreateEvent: (startTime?: Date, anchor?: HTMLElement) => void;
-  onEventDrop: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
-  onEventResize: (eventId: number, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventDrop: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
+  onEventResize: (eventId: number | string, newStart: Date, newEnd: Date) => Promise<void>;
 }
 
 const HOUR_HEIGHT = 40;
@@ -33,7 +33,7 @@ const DayView: React.FC<DayViewProps> = ({
   const date = new Date(currentDate);
 
   // --- Resizing state ---
-  const [resizingEventId, setResizingEventId] = useState<number | null>(null);
+  const [resizingEventId, setResizingEventId] = useState<number | string | null>(null);
   const [resizeType, setResizeType] = useState<'top' | 'bottom' | null>(null);
   const [resizeDeltaMins, setResizeDeltaMins] = useState<number>(0);
   const resizeDeltaMinsRef = useRef<number>(0);
@@ -41,7 +41,7 @@ const DayView: React.FC<DayViewProps> = ({
   const initialYRef = useRef<number>(0);
 
   // --- Dragging state ---
-  const [draggingEventId, setDraggingEventId] = useState<number | null>(null);
+  const [draggingEventId, setDraggingEventId] = useState<number | string | null>(null);
   const [dragDeltaMins, setDragDeltaMins] = useState<number>(0);
   const dragDeltaMinsRef = useRef<number>(0);
 

@@ -22,41 +22,55 @@ import { format, isSameDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { Event } from '../types/Event';
 import { useAuth } from '../context/AuthContext';
+import { RecurringDeleteDialog } from './RecurringDeleteDialog';
 
 interface EventViewModalProps {
   open: boolean;
   anchorEl: HTMLElement | null;
   onClose: () => void;
   event: Event | null;
-  onDelete: (id: number) => void;
+  onDelete: (eventId: number | string, scope?: string, originalStartTime?: string) => void;
 }
 
 const EventViewModal: React.FC<EventViewModalProps> = ({
   open,
   anchorEl,
-  onClose,
   event,
+  onClose,
   onDelete,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [moreMenuAnchorEl, setMoreMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (!event) return null;
 
   const handleEdit = () => {
-    if (event.id) {
-      navigate(`/eventedit/${event.id}`);
-    } else {
-      navigate('/eventedit');
-    }
     onClose();
+    navigate(`/eventedit/${event?.id}`, { 
+      state: { 
+        title: event?.title,
+        description: event?.description,
+        startTime: event?.startTime,
+        endTime: event?.endTime,
+        allDay: event?.allDay,
+      } 
+    });
   };
 
-  const handleDelete = () => {
-    if (event.id) {
-      onDelete(event.id);
+  const handleDeleteClick = () => {
+    if (event.recurrence !== 'none' || event.parentEventId) {
+      setShowDeleteDialog(true);
+    } else {
+      onDelete(event.id!);
     }
+  };
+
+  const handleConfirmDelete = (scope: 'this' | 'following' | 'all') => {
+    onDelete(event.id!, scope, event.startTime);
+    setShowDeleteDialog(false);
+    onClose();
   };
 
   const formatDateTime = (startStr: string, endStr: string, allDay?: boolean) => {
@@ -116,7 +130,7 @@ const EventViewModal: React.FC<EventViewModalProps> = ({
         </Tooltip>
         
         <Tooltip title="Delete event">
-          <IconButton onClick={handleDelete} size="small" sx={{ color: '#5f6368' }}>
+          <IconButton onClick={handleDeleteClick} size="small" sx={{ color: '#5f6368' }}>
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -218,6 +232,14 @@ const EventViewModal: React.FC<EventViewModalProps> = ({
         </Box>
 
       </Box>
+
+      {showDeleteDialog && (
+        <RecurringDeleteDialog
+          open={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          onDelete={handleConfirmDelete}
+        />
+      )}
     </Popover>
   );
 };
