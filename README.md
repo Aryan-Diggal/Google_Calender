@@ -12,7 +12,7 @@ The application follows a modern Client-Server architecture.
 
 ```mermaid
 graph TD
-    subgraph Frontend [Frontend (React + Vite)]
+    subgraph Frontend
         UI[User Interface / Views]
         State[React Context / State]
         API_Client[Axios API Client]
@@ -20,7 +20,7 @@ graph TD
         State <--> API_Client
     end
 
-    subgraph Backend [Backend (Node + Express)]
+    subgraph Backend
         Router[Express Router]
         Auth[JWT Middleware]
         Controllers[Event & User Controllers]
@@ -31,7 +31,7 @@ graph TD
         Controllers <--> Prisma
     end
 
-    subgraph Database [Database]
+    subgraph Database
         Postgres[(PostgreSQL)]
     end
 
