@@ -1,243 +1,131 @@
 # Google Calendar Clone
 
-A high-fidelity full-stack Google Calendar clone built for the Transvolt SDE Intern Assignment.
+A full-stack, highly interactive Google Calendar clone built with React, Node.js, Express, and PostgreSQL. This application accurately replicates the UI/UX of Google Calendar while providing robust backend features including JWT authentication, complex recurring events, and drag-and-drop capabilities.
 
-## Live Demo
-
-- **Frontend**: [Deployed on Vercel] *(link after deployment)*  
-- **Backend**: [Deployed on Render] *(link after deployment)*
+**🔗 Live Demo:** [https://google-calender-mu.vercel.app/](https://google-calender-mu.vercel.app/)
 
 ---
 
-## Tech Stack
+## 🏗️ Architecture & Data Flow
 
-### Frontend
-| Technology | Purpose |
-|-----------|---------|
-| React 18 + TypeScript | UI framework |
-| Vite | Build tool (fast HMR) |
-| MUI v5 (Material UI) | Component library |
-| Framer Motion | Animations & transitions |
-| date-fns | Date manipulation |
-| Axios | HTTP client with JWT interceptors |
-| React Router v6 | Client-side routing |
-| notistack | Toast notifications |
+The application follows a modern Client-Server architecture.
 
-### Backend
-| Technology | Purpose |
-|-----------|---------|
-| Node.js + Express | REST API server |
-| TypeScript | Type safety |
-| Prisma ORM | Type-safe database access |
-| SQLite (dev) / PostgreSQL (prod) | Persistent storage |
-| Zod | Request validation |
-| bcryptjs | Password hashing |
-| jsonwebtoken | JWT authentication |
+```mermaid
+graph TD
+    subgraph Frontend [Frontend (React + Vite)]
+        UI[User Interface / Views]
+        State[React Context / State]
+        API_Client[Axios API Client]
+        UI <--> State
+        State <--> API_Client
+    end
+
+    subgraph Backend [Backend (Node + Express)]
+        Router[Express Router]
+        Auth[JWT Middleware]
+        Controllers[Event & User Controllers]
+        Prisma[Prisma ORM]
+        
+        Router --> Auth
+        Auth --> Controllers
+        Controllers <--> Prisma
+    end
+
+    subgraph Database [Database]
+        Postgres[(PostgreSQL)]
+    end
+
+    API_Client <-->|REST API / JSON| Router
+    Prisma <-->|SQL| Postgres
+```
+
+### Technology Choices
+* **Frontend:** React (TypeScript), Vite, Material UI (MUI) for accessible components, `date-fns` for precise date manipulation, and `rrule` for recurrence rule parsing.
+* **Backend:** Node.js, Express, Zod for schema validation, `rrule` for expanding recurring dates, and bcrypt/jsonwebtoken for authentication.
+* **Database:** PostgreSQL hosted on Supabase, interacted with via Prisma ORM for strong typing and easy migrations.
 
 ---
 
-## Setup Instructions
+## ✨ Features Delivered
+
+* **UI Fidelity:** Exact replication of Google Calendar's Month, Week, and Day views with dynamic scaling and positioning.
+* **Core Event Management:** Create, read, update, and delete events.
+* **Drag and Drop:** Full drag-and-drop support across all views, including resizing events to change duration.
+* **Collision Detection:** Visually warns users if they try to save an event that overlaps with another.
+
+### 🌟 Bonus Features
+1. **Authentication:** Fully implemented! Includes signup, login, and JWT-based protected routes.
+2. **Recurring Events:** Fully implemented! Supports Daily, Weekly, and Monthly recurrence using standard iCalendar RRULE formats.
+3. **Editing Recurring Instances:** Fully implemented! Allows users to modify or delete *“This event”*, *“This and following events”*, or *“All events”* safely by creating exception records and modifying RRULE boundaries.
+4. **Offline Draft Support:** *(Not implemented)* **How it could be done:** We could use a Service Worker alongside `IndexedDB` or `localStorage`. When the user is offline, we save event creations/edits to a local "sync queue" and optimistically update the React UI. Once the `window.addEventListener('online')` event fires, a background sync function would sequentially flush the queue to the backend API, resolving any version conflicts.
+
+---
+
+## 🛡️ Business Logic & Edge Cases Handled
+
+* **Timezone Consistency:** All timestamps are strictly converted and stored in UTC in the database, and formatted back to the user's local timezone on the frontend.
+* **Recurrence Expansion:** Recurring events are stored as a single master record. The backend dynamically expands these into individual occurrences based on the requested date range, ensuring we don't clog the database with infinite records.
+* **Complex Deletions:** When deleting "This and following" occurrences, the backend dynamically truncates the `UNTIL` property of the master event and creates a new master event for any subsequent occurrences if necessary.
+* **Overlapping Events in Week/Day View:** The frontend calculates visual overlap using an algorithm that groups colliding events into "columns", adjusting their CSS `width` and `left` properties so they render side-by-side gracefully without covering each other.
+* **Drag-and-Drop Constraints:** Prevents dragging the end time of an event before its start time, and accurately converts pixel-coordinates into 15-minute time intervals.
+
+---
+
+## 🎨 Animations & Interactions
+
+* **Modals & Popovers:** Custom-built popovers that calculate screen boundaries to render in the optimal position (e.g., flipping to the left if too close to the right edge).
+* **Feedback States:** Material UI's built-in ripple effects, smooth transitions on hover states, and dynamic box-shadows when dragging events.
+* **Notifications:** Utilized `notistack` for non-intrusive, auto-dismissing snackbar notifications (e.g., "Event saved!", "Overlap detected").
+
+---
+
+## 🚀 Future Enhancements
+
+* **Shared Calendars:** Allow users to share calendar access with other registered emails.
+* **Push Notifications:** Integrate Web Push API to send users notifications 10 minutes before an event starts.
+* **OAuth Integration:** Add Google and GitHub SSO login options.
+
+---
+
+## 📚 Theory Questions
+
+**1. Imagine your calendar application now serves one million users. How would you redesign the backend to efficiently retrieve events, support recurring events, and prevent inconsistencies when multiple devices edit the same event?**
+* **Retrieval & Caching:** I would introduce a caching layer like Redis to cache frequently accessed date ranges (e.g., the current month) for active users. The database would be partitioned/sharded by `userId` since calendar data is highly user-isolated.
+* **Recurring Events:** Dynamically expanding RRULEs on every read becomes a bottleneck at scale. I would use a background worker to pre-compute and materialize occurrences into a fast read-cache (or materialized view) for the next 1-2 years, updating it asynchronously when a master event is modified.
+* **Concurrency (Inconsistencies):** I would implement Optimistic Concurrency Control (OCC). Every event record would have a `version` number or `updatedAt` timestamp. When a device sends an edit request, it includes the version it knows about. If the version in the DB has changed (because another device edited it), the backend rejects the request and prompts the user to refresh their client.
+
+**2. Your calendar becomes slow when rendering thousands of events. What frontend optimization techniques would you apply to improve performance, and why would each technique help?**
+* **Virtualization (Windowing):** I would implement virtualization (using libraries like `react-window`) to only render the DOM nodes for events currently visible on the screen. This drastically reduces the DOM size and layout calculation time.
+* **Memoization:** Wrap event components and grid cells in `React.memo` and use `useMemo`/`useCallback` extensively. This prevents React from needlessly re-rendering thousands of unchanged events just because a top-level state (like a modal opening) changed.
+* **Data Pagination & Lazy Loading:** Only fetch events from the API for the strict date bounds the user is viewing, rather than loading the entire year into Redux/Context state at once.
+* **Throttling/Debouncing:** Throttle expensive scroll or drag event handlers to calculate layout updates at a maximum of 60fps instead of every millisecond.
+
+---
+
+## 🛠️ Setup Instructions
 
 ### Prerequisites
-- Node.js >= 18
-- npm >= 9
+* Node.js (v18+)
+* PostgreSQL Database (Local or Cloud like Supabase)
 
-### 1. Clone & Install
+### Backend Setup
+1. `cd backend`
+2. `npm install`
+3. Create a `.env` file with your database variables:
+   ```env
+   DATABASE_URL="postgresql://user:password@host:port/db"
+   DIRECT_URL="postgresql://user:password@host:port/db"
+   JWT_SECRET="your_secret"
+   PORT=8080
+   ```
+4. `npm run db:push` (Pushes the Prisma schema to the database)
+5. `npm run dev` (Starts the backend on port 8080)
 
-```bash
-git clone <repo-url>
-cd Google_Calander_Clone
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
-npm install
-npx prisma generate
-npx prisma db push     # Creates SQLite database
-npm run dev            # Starts backend on http://localhost:8080
-```
-
-**Environment variables** (`.env` in `backend/`):
-```
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="supersecretjwtkey123"
-PORT=8080
-```
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev            # Starts frontend on http://localhost:3000
-```
-
-The Vite dev server proxies `/api` requests to `http://localhost:8080`.
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────┐
-│           BROWSER (React + Vite)        │
-│  Auth Pages │ Calendar │ EventModal     │
-│  Month / Week / Day Views               │
-│  Framer Motion animations               │
-└────────────────┬────────────────────────┘
-                 │ HTTP + JWT Bearer token
-                 ▼
-┌─────────────────────────────────────────┐
-│         Express.js REST API             │
-│  /api/auth  (register, login, me)       │
-│  /api/events (CRUD + range + overlap)   │
-│  JWT middleware on all event routes     │
-└────────────────┬────────────────────────┘
-                 │ Prisma ORM
-                 ▼
-┌─────────────────────────────────────────┐
-│         SQLite / PostgreSQL             │
-│  Users table + Events table             │
-│  All times stored in UTC               │
-└─────────────────────────────────────────┘
-```
-
-### Data Flow
-1. User logs in → receives JWT token stored in `localStorage`
-2. All event API requests attach `Authorization: Bearer <token>` header
-3. Backend middleware verifies JWT and extracts `userId`
-4. All event queries are scoped to the authenticated user's data
-
----
-
-## Business Logic & Edge Cases
-
-### Event Times
-- All timestamps stored in UTC in the database
-- Frontend displays times in the user's local timezone via browser's `Date` API
-- `new Date(isoString)` automatically converts UTC to local time
-
-### Overlap Detection
-1. Before saving, the EventModal calls `GET /api/events/overlapping?startTime=&endTime=&excludeId=`
-2. Backend query: `startTime < event.endTime AND endTime > event.startTime` (standard interval overlap)
-3. If overlaps found, a warning banner is shown with conflicting event names
-4. User can choose to "Save anyway" or cancel
-
-### Validation
-- Backend uses **Zod** schemas to validate all incoming data
-- `endTime` must be strictly after `startTime` (enforced both frontend and backend)
-- Title is required (min 1 character)
-- Passwords hashed with bcrypt (10 rounds)
-
-### Auth Edge Cases
-- Expired/invalid JWT → interceptor redirects to `/login`
-- User data (name, email) stored in `localStorage` alongside token for instant display
-
-### Recurring Events
-- Stored as a `recurrence` field: `"none" | "daily" | "weekly" | "monthly"`
-- UI allows selecting recurrence on event creation/edit
-- Backend stores the recurrence type; instances are not expanded server-side (stored as templates)
-
----
-
-## Animations & Interactions
-
-| Feature | Implementation |
-|---------|---------------|
-| View transitions (month/week/day) | `AnimatePresence` + `motion.div` with opacity/x slide |
-| Event modal open/close | `motion.div` scale + opacity on Dialog Paper |
-| Event pills in month view | `motion.div` initial scale 0.9 → 1 on mount |
-| Event blocks in week/day | `motion.div` with `whileHover` scale effect |
-| Overlap warning banner | `AnimatePresence` height 0 → auto animation |
-| Login/register pages | Fade + translateY entrance animation |
-| Sidebar | MUI Drawer with 0.25s CSS transition |
-| Color picker | CSS `transform: scale(1.2)` on hover |
-
----
-
-## API Reference
-
-### Auth
-| Method | Endpoint | Auth | Body |
-|--------|----------|------|------|
-| POST | `/api/auth/register` | No | `{ name, email, password }` |
-| POST | `/api/auth/login` | No | `{ email, password }` |
-| GET | `/api/auth/me` | Yes | — |
-
-### Events
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/events` | Yes | All user events |
-| GET | `/api/events/:id` | Yes | Single event |
-| GET | `/api/events/range?startDate=&endDate=` | Yes | Events in range |
-| GET | `/api/events/overlapping?startTime=&endTime=&excludeId=` | Yes | Overlap check |
-| POST | `/api/events` | Yes | Create event |
-| PUT | `/api/events/:id` | Yes | Update event |
-| DELETE | `/api/events/:id` | Yes | Delete event |
-
----
-
-## Theory Questions
-
-### Q1: Scaling to 1 Million Users
-
-To redesign the backend for 1M users:
-
-**Event Retrieval:**
-- Add **composite indexes** on `(userId, startTime, endTime)` for fast range queries
-- Use **pagination** with cursor-based pagination for large result sets
-- Deploy **Redis** as a cache layer for frequently accessed date ranges (e.g., current month view)
-- Use **read replicas** (PostgreSQL streaming replication) for read-heavy workloads
-
-**Recurring Events:**
-- Store recurring event **templates** separately from instances
-- Use a **background job** (e.g., BullMQ) to pre-generate instances for the next N months
-- Store expansion results in a separate `EventInstance` table indexed by date
-
-**Preventing Inconsistencies (Multi-device Edit):**
-- Implement **optimistic locking**: add a `version` field to events; reject updates where `version` doesn't match
-- Use **database transactions** for overlap checks + event saves to prevent race conditions
-- Consider **event sourcing** for conflict resolution: store all mutations as an append-only log
-- Use **WebSockets** or **SSE** to push real-time updates to other connected devices
-
-**Infrastructure:**
-- Deploy behind a **load balancer** (e.g., AWS ALB) with horizontal scaling
-- Use **connection pooling** (PgBouncer) to manage DB connections efficiently
-- Move to **PostgreSQL** with partitioning by `userId` hash for massive scale
-
----
-
-### Q2: Frontend Performance for Thousands of Events
-
-**Techniques to apply:**
-
-1. **Windowed Rendering (Virtual DOM)**: Use `react-window` or `react-virtual` to only render events visible in the viewport. For a week view with 1000+ events, only ~50 are visible at once — rendering all 1000 would cause layout thrashing.
-
-2. **Memoization with `useMemo`**: Already implemented — `filteredEvents` only recomputes when `events`, `currentDate`, or `currentView` changes, avoiding unnecessary array scans.
-
-3. **Date Range Filtering at the API level**: Instead of fetching all events and filtering on the client, use `GET /api/events/range?startDate=&endDate=` to only load events for the visible window. Reduces initial payload by 99% for users with years of history.
-
-4. **`React.memo` on event components**: Wrap individual event pill/block components in `React.memo` so they only re-render when their specific event data changes, not on every parent state change.
-
-5. **Debounced API calls**: When navigating quickly (prev/next buttons), debounce the API refetch to avoid firing 5 requests for 5 quick clicks.
-
-6. **Canvas rendering for dense views**: If 10,000+ events need display simultaneously, consider a canvas-based approach (like `react-konva`) instead of DOM nodes, which drastically reduces memory usage.
-
-7. **Web Workers for overlap calculation**: The `processOverlappingEvents()` algorithm is O(n²) in the worst case. For large datasets, offload it to a Web Worker to avoid blocking the main thread during layout computation.
-
----
-
-## Future Enhancements
-
-- **Google OAuth integration** for real Google account sign-in
-- **Calendar sharing** between users (share calendar, view-only access)
-- **Event invitations** with email notifications
-- **Drag-and-drop** with `@dnd-kit` for moving events between time slots
-- **Resize handles** on events to extend duration by dragging the bottom edge
-- **Search** across all event titles, descriptions, and locations
-- **Offline support** with Service Workers and IndexedDB for full offline CRUD
-- **Push notifications** via Web Push API for event reminders
-- **Import/Export** ICS files for compatibility with other calendar apps
-- **Multiple timezone support** for meetings across time zones
+### Frontend Setup
+1. `cd frontend`
+2. `npm install`
+3. Create a `.env` file for the frontend:
+   ```env
+   VITE_API_URL="http://localhost:8080"
+   ```
+4. `npm run dev` (Starts the Vite dev server on port 3000/3001)
