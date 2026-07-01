@@ -2,7 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <link rel="icon" type="image/png" href="" id="dynamic-favicon" />
+    <script>
+      (function() {
+        var date = new Date().getDate();
+        var iconUrl = 'https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_' + date + '_2x.png';
+        document.getElementById('dynamic-favicon').href = iconUrl;
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="A high-fidelity Google Calendar clone with full-stack support, drag-and-drop events, recurring events, and real-time conflict detection." />
     <title>Google Calendar Clone</title>
