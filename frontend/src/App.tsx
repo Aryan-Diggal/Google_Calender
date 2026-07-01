@@ -31,7 +31,6 @@ import {
   isToday,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarLogo } from './components/CalendarLogo';
 import { useSnackbar } from 'notistack';
 import Calendar from './components/Calendar';
 import EventModal from './components/EventModal';
@@ -427,7 +426,15 @@ function CalendarApp() {
               cursor: 'default',
             }}
           >
-            <CalendarLogo date={new Date().getDate()} />
+            <img
+              className="gb_6c gb_ge"
+              src={`https://www.gstatic.com/images/branding/productlogos/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}/v2/png/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}_96dp.png`}
+              srcSet={`https://www.gstatic.com/images/branding/productlogos/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}/v2/png/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}_96dp.png 1x, https://www.gstatic.com/images/branding/productlogos/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}/v2/png/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}_96dp.png 2x`}
+              alt=""
+              aria-hidden="true"
+              role="presentation"
+              style={{ width: '40px', height: '40px' }}
+            />
             <Typography
               variant="h6"
               sx={{ color: '#3c4043', fontWeight: 400, fontSize: '1.375rem', letterSpacing: '-0.01em', mr: 2 }}
