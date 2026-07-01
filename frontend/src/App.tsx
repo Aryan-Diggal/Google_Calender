@@ -428,8 +428,8 @@ function CalendarApp() {
           >
             <img
               className="gb_6c gb_ge"
-              src={`https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_${new Date().getDate()}_2x.png`}
-              srcSet={`https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_${new Date().getDate()}_2x.png 1x, https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_${new Date().getDate()}_2x.png 2x`}
+              src={`https://www.gstatic.com/images/branding/productlogos/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}/v2/png/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}_96dp.png`}
+              srcSet={`https://www.gstatic.com/images/branding/productlogos/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}/v2/png/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}_96dp.png 1x, https://www.gstatic.com/images/branding/productlogos/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}/v2/png/calendar_2026_${new Date().getDate().toString().padStart(2, '0')}_96dp.png 2x`}
               alt=""
               aria-hidden="true"
               role="presentation"
