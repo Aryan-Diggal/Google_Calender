@@ -31,6 +31,7 @@ import {
   isToday,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CalendarLogo } from './components/CalendarLogo';
 import { useSnackbar } from 'notistack';
 import Calendar from './components/Calendar';
 import EventModal from './components/EventModal';
@@ -426,15 +427,7 @@ function CalendarApp() {
               cursor: 'default',
             }}
           >
-            <img
-              className="gb_6c gb_ge"
-              src={`https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_${new Date().getDate()}_2x.png`}
-              srcSet={`https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_${new Date().getDate()}_2x.png 2x`}
-              alt=""
-              aria-hidden="true"
-              role="presentation"
-              style={{ width: '40px', height: '40px' }}
-            />
+            <CalendarLogo date={new Date().getDate()} />
             <Typography
               variant="h6"
               sx={{ color: '#3c4043', fontWeight: 400, fontSize: '1.375rem', letterSpacing: '-0.01em', mr: 2 }}
